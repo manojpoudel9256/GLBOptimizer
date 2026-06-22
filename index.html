@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GLB Optimizer — UE5 Ready</title>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0d0f14;
+  --surface:  #141720;
+  --card:     #1a1e2a;
+  --border:   #252b3b;
+  --accent:   #4f8ef7;
+  --accent2:  #7c5af7;
+  --green:    #2dca73;
+  --yellow:   #f5a623;
+  --red:      #f74f4f;
+  --text:     #e8eaf0;
+  --muted:    #7b82a0;
+  --radius:   12px;
+  --radius-sm: 8px;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+/* ── Header ── */
+header {
+  display: flex; align-items: center; gap: 14px;
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+header h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+header p  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.status-badge {
+  margin-left: auto; font-size: 11px; padding: 4px 10px; border-radius: 20px;
+  background: rgba(45,202,115,0.12); color: var(--green); border: 1px solid rgba(45,202,115,0.25);
+}
+
+/* ── Layout ── */
+main { display: grid; grid-template-columns: 340px 1fr; gap: 0; min-height: calc(100vh - 65px); }
+
+/* ── Sidebar ── */
+aside {
+  background: var(--surface); border-right: 1px solid var(--border);
+  padding: 24px 20px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 20px;
+}
+
+.section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+}
+
+/* ── Upload zone ── */
+.upload-zone {
+  border: 2px dashed var(--border); border-radius: var(--radius);
+  padding: 28px 16px; text-align: center; cursor: pointer;
+  transition: all 0.2s; background: var(--card); position: relative;
+}
+.upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: rgba(79,142,247,0.06); }
+.upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.upload-icon { font-size: 28px; margin-bottom: 10px; display: block; }
+.upload-zone h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.upload-zone p  { font-size: 12px; color: var(--muted); }
+.file-chosen { font-size: 12px; color: var(--green); margin-top: 8px; display: none; font-weight: 500; }
+
+/* ── Options ── */
+.options-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.option-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer;
+}
+.option-row:last-child { border-bottom: none; padding-bottom: 0; }
+.option-row:first-child { padding-top: 0; }
+.toggle {
+  width: 38px; height: 22px; background: var(--border); border-radius: 11px;
+  position: relative; flex-shrink: 0; margin-top: 2px; transition: background 0.2s; cursor: pointer;
+}
+.toggle::after {
+  content: ''; position: absolute; left: 3px; top: 3px;
+  width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.2s;
+}
+.toggle.on { background: var(--accent); }
+.toggle.on::after { transform: translateX(16px); }
+.option-text { flex: 1; }
+.option-text strong { font-size: 13px; font-weight: 600; display: block; margin-bottom: 2px; }
+.option-text span   { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+.png-badge {
+  font-size: 11px; color: #a78bfa;
+  background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.25);
+  border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; text-align: center;
+}
+
+.sub-options { display: none; padding: 10px 0 4px; gap: 8px; flex-direction: column; }
+.sub-options.visible { display: flex; }
+.sub-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.slider-row { display: flex; align-items: center; gap: 10px; }
+.slider-row input[type=range] { flex: 1; accent-color: var(--accent); height: 4px; }
+.slider-val { font-size: 12px; font-weight: 600; color: var(--accent); min-width: 36px; text-align: right; }
+
+.preset-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+.preset-btn {
+  padding: 7px 4px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+  background: var(--card); color: var(--text); font-size: 11px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s; text-align: center; line-height: 1.3;
+}
+.preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+.preset-btn.active { border-color: var(--accent); background: rgba(79,142,247,0.12); color: var(--accent); }
+.preset-hint { font-size: 11px; color: var(--muted); text-align: center; }
+
+.select-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.select-btn {
+  flex: 1; padding: 6px 0; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--muted); font-size: 12px; font-weight: 500;
+  cursor: pointer; text-align: center; transition: all 0.15s;
+}
+.select-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(79,142,247,0.08); }
+
+/* ── Compress button ── */
+.compress-btn {
+  width: 100%; padding: 13px; border-radius: var(--radius-sm); border: none;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s; letter-spacing: 0.01em;
+}
+.compress-btn:hover  { opacity: 0.9; }
+.compress-btn:active { transform: scale(0.98); }
+.compress-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Main content area ── */
+.content { display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── Welcome state ── */
+.welcome {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  flex: 1; gap: 16px; color: var(--muted); padding: 40px; text-align: center;
+}
+.welcome-icon { font-size: 48px; opacity: 0.4; }
+.welcome h2 { font-size: 18px; color: var(--text); opacity: 0.5; }
+.welcome p  { font-size: 13px; max-width: 360px; line-height: 1.6; }
+
+/* ── Progress ── */
+.progress-wrap {
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  flex: 1; gap: 20px; padding: 40px;
+}
+.progress-wrap.show { display: flex; }
+.spinner {
+  width: 48px; height: 48px; border: 3px solid var(--border);
+  border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.progress-label { font-size: 14px; color: var(--muted); }
+.progress-steps { display: flex; flex-direction: column; gap: 6px; max-width: 320px; width: 100%; }
+.step-item {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px; color: var(--muted); padding: 8px 12px;
+  border-radius: 6px; background: var(--card);
+}
+.step-item.active { color: var(--text); background: rgba(79,142,247,0.1); }
+.step-item.done   { color: var(--green); }
+.step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+.step-item.active .step-dot { background: var(--accent); animation: pulse 1s ease-in-out infinite; }
+.step-item.done  .step-dot  { background: var(--green); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* ── Results ── */
+.results { display: none; flex-direction: column; height: 100%; overflow: hidden; }
+.results.show { display: flex; }
+
+.stats-bar {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.stat-cell { background: var(--surface); padding: 14px 16px; text-align: center; }
+.stat-cell .val { font-size: 20px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+.stat-cell .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.val.green { color: var(--green); }
+.val.yellow { color: var(--yellow); }
+.val.red { color: var(--red); }
+
+.viewer-wrap { display: grid; grid-template-columns: 1fr 300px; flex: 1; overflow: hidden; min-height: 0; }
+
+/* ── 3D Viewer ── */
+.viewer-panel { position: relative; background: #0a0c10; overflow: hidden; }
+#canvas3d { width: 100%; height: 100%; display: block; }
+
+.viewer-controls {
+  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 6px;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+  border: 1px solid var(--border); border-radius: 20px; padding: 6px 10px;
+}
+.viewer-btn {
+  padding: 5px 12px; border-radius: 14px; border: none;
+  background: transparent; color: var(--muted); font-size: 11px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s;
+}
+.viewer-btn.active, .viewer-btn:hover { background: var(--accent); color: #fff; }
+
+.viewer-label {
+  position: absolute; top: 12px; left: 16px; font-size: 11px; color: var(--muted);
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+  padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
+}
+
+/* ══════════════════════════════════════════
+   NEW: Floating Lighting Panel
+══════════════════════════════════════════ */
+.lighting-panel {
+  position: absolute; top: 12px; right: 12px;
+  background: rgba(10,12,18,0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  width: 210px;
+  z-index: 10;
+  display: flex; flex-direction: column; gap: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.lp-title {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); display: flex; align-items: center; justify-content: space-between;
+}
+.lp-collapse-btn {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font-size: 11px; padding: 0 2px; line-height: 1; transition: color 0.15s;
+}
+.lp-collapse-btn:hover { color: var(--text); }
+
+.lp-body { display: flex; flex-direction: column; gap: 9px; }
+.lp-body.collapsed { display: none; }
+
+.lp-row { display: flex; flex-direction: column; gap: 4px; }
+.lp-row-label {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; color: var(--muted);
+}
+.lp-row-label span { color: var(--accent); font-weight: 600; font-size: 11px; }
+.lp-row input[type=range] { width: 100%; accent-color: var(--accent); height: 3px; cursor: pointer; }
+
+/* Env preset chips */
+.env-presets { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
+.env-btn {
+  padding: 5px 4px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--card); color: var(--muted); font-size: 10px; font-weight: 500;
+  cursor: pointer; text-align: center; transition: all 0.15s; line-height: 1.4;
+}
+.env-btn:hover { border-color: var(--accent); color: var(--accent); }
+.env-btn.active { border-color: var(--accent); background: rgba(79,142,247,0.15); color: var(--accent); }
+
+/* Sky color row */
+.sky-color-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
+.sky-color-row input[type=color] {
+  width: 28px; height: 22px; border: 1px solid var(--border);
+  border-radius: 4px; background: none; cursor: pointer; padding: 1px;
+}
+
+/* ── Detail panel ── */
+.detail-panel {
+  background: var(--surface); border-left: 1px solid var(--border);
+  overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px;
+}
+.detail-section h4 {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+.compare-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 12px;
+}
+.compare-row:last-child { border-bottom: none; }
+.compare-row .key { color: var(--muted); }
+.compare-row .vals { display: flex; gap: 8px; align-items: center; }
+.compare-row .before-val { color: var(--muted); text-decoration: line-through; font-size: 11px; }
+.compare-row .after-val  { color: var(--text); font-weight: 500; }
+.compare-row .saved-tag  {
+  font-size: 10px; padding: 1px 5px; border-radius: 4px;
+  background: rgba(45,202,115,0.15); color: var(--green);
+}
+.log-list { display: flex; flex-direction: column; gap: 4px; }
+.log-item {
+  font-size: 11px; color: var(--muted); padding: 6px 8px;
+  background: var(--card); border-radius: 5px; line-height: 1.4;
+  border-left: 2px solid var(--accent);
+}
+.download-btn {
+  width: 100%; padding: 11px; border-radius: var(--radius-sm); border: none;
+  background: var(--green); color: #fff; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: opacity 0.15s; margin-top: auto;
+}
+.download-btn:hover { opacity: 0.85; }
+
+/* ── Error state ── */
+.error-msg {
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  flex: 1; gap: 12px; color: var(--red); padding: 40px; text-align: center;
+}
+.error-msg.show { display: flex; }
+.error-msg h3 { font-size: 16px; }
+.error-msg p  { font-size: 13px; color: var(--muted); }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⚡</div>
+  <div>
+    <h1>GLB Optimizer</h1>
+    <p>Compress 3D models for Unreal Engine 5</p>
+  </div>
+  <div class="status-badge">● Server running</div>
+</header>
+
+<main>
+  <aside>
+    <div>
+      <div class="section-label">Quick Presets</div>
+      <div class="preset-row">
+        <button class="preset-btn" onclick="applyPreset('quality')">🟢 Max Quality</button>
+        <button class="preset-btn" onclick="applyPreset('balanced')">🟡 Balanced</button>
+        <button class="preset-btn" onclick="applyPreset('small')">🔴 Max Small</button>
+      </div>
+      <div class="preset-hint" id="presetHint">Choose a preset or configure manually below</div>
+    </div>
+
+    <div>
+      <div class="section-label">1. Upload Model</div>
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept=".glb">
+        <span class="upload-icon">📦</span>
+        <h3>Drop your GLB file here</h3>
+        <p>or click to browse</p>
+        <div class="file-chosen" id="fileChosen"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">2. Compression Options</div>
+      <div class="png-badge">🖼 PNG-only mode — all textures output as lossless PNG</div>
+      <div class="options-card">
+        <div class="option-row" onclick="toggleOpt('simplify')">
+          <div class="toggle on" id="tog-simplify"></div>
+          <div class="option-text">
+            <strong>Mesh Simplification</strong>
+            <span>Reduce polygon &amp; vertex count.</span>
+          </div>
+        </div>
+        <div class="sub-options visible" id="sub-simplify">
+          <div>
+            <div class="sub-label">Keep how many vertices</div>
+            <div class="slider-row">
+              <input type="range" id="simplifyRatio" min="10" max="90" value="50"
+                oninput="document.getElementById('ratioVal').textContent=this.value+'%'">
+              <span class="slider-val" id="ratioVal">50%</span>
+            </div>
+            <div class="sub-label" style="margin-top:4px">Lower = smaller file, less detail</div>
+          </div>
+        </div>
+
+        <div class="option-row" onclick="toggleOpt('texCompress')">
+          <div class="toggle on" id="tog-texCompress"></div>
+          <div class="option-text">
+            <strong>Texture Compression</strong>
+            <span>Re-compress all textures as PNG (lossless).</span>
+          </div>
+        </div>
+
+        <div class="option-row" onclick="toggleOpt('texResize')">
+          <div class="toggle on" id="tog-texResize"></div>
+          <div class="option-text">
+            <strong>Texture Resize</strong>
+            <span>Cap texture resolution. <strong style="color:var(--green)">Biggest PNG size win.</strong></span>
+          </div>
+        </div>
+        <div class="sub-options visible" id="sub-texResize">
+          <div>
+            <div class="sub-label">Maximum texture size</div>
+            <div class="select-row">
+              <div class="select-btn" data-val="4K" onclick="selectSize(this,'4K')">4K (keep)</div>
+              <div class="select-btn active" data-val="2K" onclick="selectSize(this,'2K')">2K ★</div>
+              <div class="select-btn" data-val="1K" onclick="selectSize(this,'1K')">1K</div>
+              <div class="select-btn" data-val="512" onclick="selectSize(this,'512')">512px</div>
+            </div>
+            <div class="sub-label" style="margin-top:6px;color:var(--yellow)">★ 2K = best quality/size balance for UE5</div>
+          </div>
+        </div>
+
+        <div class="option-row" onclick="toggleOpt('resample')">
+          <div class="toggle on" id="tog-resample"></div>
+          <div class="option-text">
+            <strong>Animation Resample</strong>
+            <span>Losslessly reduce animation keyframe data.</span>
+          </div>
+        </div>
+
+        <div class="option-row" onclick="toggleOpt('cleanup')">
+          <div class="toggle on" id="tog-cleanup"></div>
+          <div class="option-text">
+            <strong>Remove Unused Data</strong>
+            <span>Delete duplicate geometry, unused nodes.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="compress-btn" id="compressBtn" onclick="startCompress()" disabled>
+      ⚡ Optimize Model
+    </button>
+  </aside>
+
+  <div class="content">
+
+    <div class="welcome" id="welcomeState">
+      <div class="welcome-icon">🎮</div>
+      <h2>Upload a GLB to get started</h2>
+      <p>Choose your compression settings on the left, upload your model, and hit Optimize. You'll see a full 3D preview with before/after stats.</p>
+    </div>
+
+    <div class="progress-wrap" id="progressState">
+      <div class="spinner"></div>
+      <div class="progress-label" id="progressLabel">Processing your model…</div>
+      <div class="progress-steps">
+        <div class="step-item" id="step1"><div class="step-dot"></div>Reading file</div>
+        <div class="step-item" id="step2"><div class="step-dot"></div>Simplifying mesh</div>
+        <div class="step-item" id="step3"><div class="step-dot"></div>Compressing textures</div>
+        <div class="step-item" id="step4"><div class="step-dot"></div>Cleaning up &amp; writing</div>
+      </div>
+    </div>
+
+    <div class="error-msg" id="errorState">
+      <div style="font-size:36px">⚠️</div>
+      <h3>Compression failed</h3>
+      <p id="errorText"></p>
+    </div>
+
+    <div class="results" id="resultsState">
+      <div class="stats-bar">
+        <div class="stat-cell"><div class="val" id="stat-before">—</div><div class="lbl">Before</div></div>
+        <div class="stat-cell"><div class="val green" id="stat-after">—</div><div class="lbl">After</div></div>
+        <div class="stat-cell"><div class="val green" id="stat-saved">—</div><div class="lbl">Saved</div></div>
+        <div class="stat-cell"><div class="val" id="stat-verts">—</div><div class="lbl">Vertices</div></div>
+      </div>
+
+      <div class="viewer-wrap">
+        <!-- 3D Viewer -->
+        <div class="viewer-panel">
+          <canvas id="canvas3d"></canvas>
+
+          <div class="viewer-label" id="viewerLabel">Compressed model</div>
+
+          <!-- ══ LIGHTING PANEL ══ -->
+          <div class="lighting-panel">
+            <div class="lp-title">
+              💡 Lighting
+              <button class="lp-collapse-btn" id="lpCollapseBtn" onclick="toggleLightingPanel()">▲</button>
+            </div>
+            <div class="lp-body" id="lpBody">
+
+              <!-- Environment presets -->
+              <div class="lp-row">
+                <div class="lp-row-label">Environment</div>
+                <div class="env-presets">
+                  <button class="env-btn" data-preset="studio"  onclick="applyEnvPreset('studio')">🏢 Studio</button>
+                  <button class="env-btn active" data-preset="outdoor" onclick="applyEnvPreset('outdoor')">☀️ Outdoor</button>
+                  <button class="env-btn" data-preset="sunset"  onclick="applyEnvPreset('sunset')">🌇 Sunset</button>
+                  <button class="env-btn" data-preset="night"   onclick="applyEnvPreset('night')">🌙 Night</button>
+                </div>
+              </div>
+
+              <!-- Sun intensity -->
+              <div class="lp-row">
+                <div class="lp-row-label">Sun Intensity <span id="sunIntVal">1.8</span></div>
+                <div class="slider-row">
+                  <input type="range" id="sunIntSlider" min="0" max="5" step="0.1" value="1.8"
+                    oninput="onSunIntensity(this.value)">
+                </div>
+              </div>
+
+              <!-- Ambient -->
+              <div class="lp-row">
+                <div class="lp-row-label">Ambient Light <span id="ambIntVal">0.60</span></div>
+                <div class="slider-row">
+                  <input type="range" id="ambIntSlider" min="0" max="3" step="0.05" value="0.6"
+                    oninput="onAmbientIntensity(this.value)">
+                </div>
+              </div>
+
+              <!-- Sun azimuth -->
+              <div class="lp-row">
+                <div class="lp-row-label">Sun Angle <span id="sunAngVal">45°</span></div>
+                <div class="slider-row">
+                  <input type="range" id="sunAngSlider" min="0" max="360" step="1" value="45"
+                    oninput="onSunAngle(this.value)">
+                </div>
+              </div>
+
+              <!-- Sun elevation -->
+              <div class="lp-row">
+                <div class="lp-row-label">Sun Height <span id="sunHtVal">60°</span></div>
+                <div class="slider-row">
+                  <input type="range" id="sunHtSlider" min="5" max="90" step="1" value="60"
+                    oninput="onSunHeight(this.value)">
+                </div>
+              </div>
+
+              <!-- Sky color -->
+              <div class="lp-row">
+                <div class="sky-color-row">
+                  <span>Sky Color</span>
+                  <input type="color" id="skyColorPicker" value="#1a3060" oninput="onSkyColor(this.value)">
+                  <span style="font-size:10px;color:var(--muted)" id="skyColorLabel">#1a3060</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+          <!-- end lighting panel -->
+
+          <div class="viewer-controls">
+            <button class="viewer-btn active" onclick="resetCamera()">Reset view</button>
+            <button class="viewer-btn" onclick="toggleWireframe()">Wireframe</button>
+            <button class="viewer-btn" onclick="toggleAutoRotate()">Auto rotate</button>
+          </div>
+        </div>
+
+        <!-- Detail panel -->
+        <div class="detail-panel">
+          <div class="detail-section">
+            <h4>Size Comparison</h4>
+            <div class="compare-row">
+              <span class="key">File size</span>
+              <div class="vals">
+                <span class="before-val" id="d-size-before"></span>
+                <span class="after-val"  id="d-size-after"></span>
+                <span class="saved-tag"  id="d-size-saved"></span>
+              </div>
+            </div>
+            <div class="compare-row">
+              <span class="key">Vertices</span>
+              <div class="vals">
+                <span class="before-val" id="d-verts-before"></span>
+                <span class="after-val"  id="d-verts-after"></span>
+              </div>
+            </div>
+            <div class="compare-row">
+              <span class="key">Triangles</span>
+              <div class="vals">
+                <span class="before-val" id="d-tris-before"></span>
+                <span class="after-val"  id="d-tris-after"></span>
+              </div>
+            </div>
+            <div class="compare-row">
+              <span class="key">Textures</span>
+              <div class="vals">
+                <span class="before-val" id="d-tex-before"></span>
+                <span class="after-val"  id="d-tex-after"></span>
+                <span class="saved-tag"  id="d-tex-saved"></span>
+              </div>
+            </div>
+            <div class="compare-row">
+              <span class="key">Animations</span>
+              <div class="vals"><span class="after-val" id="d-anims"></span></div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h4>Texture Breakdown</h4>
+            <div id="texBreakdown" style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted);"></div>
+          </div>
+
+          <div class="detail-section">
+            <h4>What was done</h4>
+            <div class="log-list" id="logList"></div>
+          </div>
+
+          <button class="download-btn" onclick="downloadResult()">⬇ Download Optimized GLB</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader }    from 'three/addons/loaders/GLTFLoader.js';
+
+// ── State ─────────────────────────────────────────────
+let selectedFile = null, resultFilename = null;
+let scene, camera, renderer, controls, model, animMixer, clock;
+let wireframeOn = false, autoRotate = false;
+let sunLight, ambientLight, fillLight, rimLight, hemiLight;
+let lpCollapsed = false;
+
+const opts = { simplify: true, texCompress: true, texResize: true, resample: true, cleanup: true };
+let texResizeVal = '2K';
+
+// ── Expose globals ─────────────────────────────────────
+window.toggleOpt          = toggleOpt;
+window.selectSize         = selectSize;
+window.applyPreset        = applyPreset;
+window.startCompress      = startCompress;
+window.resetCamera        = resetCamera;
+window.toggleWireframe    = toggleWireframe;
+window.toggleAutoRotate   = toggleAutoRotate;
+window.downloadResult     = downloadResult;
+window.applyEnvPreset     = applyEnvPreset;
+window.onSunIntensity     = onSunIntensity;
+window.onAmbientIntensity = onAmbientIntensity;
+window.onSunAngle         = onSunAngle;
+window.onSunHeight        = onSunHeight;
+window.onSkyColor         = onSkyColor;
+window.toggleLightingPanel = toggleLightingPanel;
+
+// ── File input ────────────────────────────────────────
+const fileInput  = document.getElementById('fileInput');
+const uploadZone = document.getElementById('uploadZone');
+fileInput.addEventListener('change', e => { if (e.target.files[0]) setFile(e.target.files[0]); });
+uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f && f.name.toLowerCase().endsWith('.glb')) setFile(f);
+});
+
+function setFile(f) {
+  selectedFile = f;
+  const el = document.getElementById('fileChosen');
+  el.textContent = `✓ ${f.name}  (${(f.size/1024/1024).toFixed(1)} MB)`;
+  el.style.display = 'block';
+  document.getElementById('compressBtn').disabled = false;
+}
+
+// ── Option toggles ─────────────────────────────────────
+function toggleOpt(key) {
+  opts[key] = !opts[key];
+  const tog = document.getElementById('tog-' + key);
+  if (tog) tog.className = 'toggle' + (opts[key] ? ' on' : '');
+  const sub = document.getElementById('sub-' + key);
+  if (sub) sub.className = 'sub-options' + (opts[key] ? ' visible' : '');
+}
+function selectSize(el, val) {
+  texResizeVal = val;
+  document.querySelectorAll('#sub-texResize .select-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+function setOpt(key, val) {
+  opts[key] = val;
+  const tog = document.getElementById('tog-' + key);
+  if (tog) tog.className = 'toggle' + (val ? ' on' : '');
+  const sub = document.getElementById('sub-' + key);
+  if (sub) sub.className = 'sub-options' + (val ? ' visible' : '');
+}
+function setSimplifyRatio(val) {
+  document.getElementById('simplifyRatio').value = val;
+  document.getElementById('ratioVal').textContent = val + '%';
+}
+function setSizeBtn(val) {
+  texResizeVal = val;
+  document.querySelectorAll('#sub-texResize .select-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.val === val);
+  });
+}
+function applyPreset(preset) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  if (preset === 'quality') {
+    setOpt('simplify',false); setOpt('texCompress',true); setOpt('texResize',true);
+    setOpt('resample',true); setOpt('cleanup',true); setSimplifyRatio(75); setSizeBtn('2K');
+    document.getElementById('presetHint').textContent = 'Light compression — textures 2K PNG, no mesh changes';
+  } else if (preset === 'balanced') {
+    setOpt('simplify',true); setOpt('texCompress',true); setOpt('texResize',true);
+    setOpt('resample',true); setOpt('cleanup',true); setSimplifyRatio(50); setSizeBtn('2K');
+    document.getElementById('presetHint').textContent = 'Balanced — 50% mesh reduction, textures 2K PNG';
+  } else if (preset === 'small') {
+    setOpt('simplify',true); setOpt('texCompress',true); setOpt('texResize',true);
+    setOpt('resample',true); setOpt('cleanup',true); setSimplifyRatio(25); setSizeBtn('1K');
+    document.getElementById('presetHint').textContent = 'Maximum compression — 25% mesh, textures 1K PNG';
+  }
+}
+
+// ── Compress ──────────────────────────────────────────
+async function startCompress() {
+  if (!selectedFile) return;
+  showState('progress'); animateSteps();
+  const form = new FormData();
+  form.append('file',          selectedFile, selectedFile.name);
+  form.append('simplify',      opts.simplify      ? 'true' : 'false');
+  form.append('simplifyRatio', (document.getElementById('simplifyRatio').value / 100).toFixed(2));
+  form.append('simplifyError', '0.01');
+  form.append('texCompress',   opts.texCompress   ? 'true' : 'false');
+  form.append('texResize',     opts.texResize ? texResizeVal : 'none');
+  form.append('resample',      opts.resample      ? 'true' : 'false');
+  form.append('cleanup',       opts.cleanup       ? 'true' : 'false');
+  try {
+    const res  = await fetch('/compress', { method: 'POST', body: form });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Unknown error');
+    resultFilename = data.outputName;
+    showResults(data);
+    loadModel(`/preview/${data.outputName}`);
+  } catch (err) { showError(err.message); }
+}
+
+let stepTimer = null;
+function animateSteps() {
+  const steps = [1,2,3,4]; let i = 0;
+  steps.forEach(n => { document.getElementById('step'+n).className = 'step-item'; });
+  stepTimer = setInterval(() => {
+    if (i > 0) document.getElementById('step'+steps[i-1]).className = 'step-item done';
+    if (i < steps.length) { document.getElementById('step'+steps[i]).className = 'step-item active'; i++; }
+    else clearInterval(stepTimer);
+  }, 800);
+}
+
+function showState(state) {
+  clearInterval(stepTimer);
+  document.getElementById('welcomeState').style.display  = 'none';
+  document.getElementById('progressState').classList.remove('show');
+  document.getElementById('errorState').classList.remove('show');
+  document.getElementById('resultsState').classList.remove('show');
+  if (state === 'welcome')  document.getElementById('welcomeState').style.display = 'flex';
+  if (state === 'progress') document.getElementById('progressState').classList.add('show');
+  if (state === 'error')    document.getElementById('errorState').classList.add('show');
+  if (state === 'results')  document.getElementById('resultsState').classList.add('show');
+}
+function showError(msg) { document.getElementById('errorText').textContent = msg; showState('error'); }
+
+function fmt(bytes) {
+  if (bytes >= 1024*1024) return (bytes/1024/1024).toFixed(2) + ' MB';
+  return (bytes/1024).toFixed(0) + ' KB';
+}
+function fmtN(n) { return (n||0).toLocaleString(); }
+
+function showResults(data) {
+  clearInterval(stepTimer);
+  const b = data.before, a = data.after;
+  document.getElementById('stat-before').textContent = fmt(b.fileSize);
+  document.getElementById('stat-after').textContent  = fmt(a.fileSize);
+  const savedPct = parseFloat(data.savedPct);
+  const savedEl  = document.getElementById('stat-saved');
+  savedEl.textContent = '-' + data.savedPct + '%';
+  savedEl.className   = 'val ' + (savedPct >= 40 ? 'green' : savedPct >= 15 ? 'yellow' : 'red');
+  const vertPct = b.verts > 0 ? (((b.verts - a.verts) / b.verts) * 100).toFixed(0) : 0;
+  const vertEl  = document.getElementById('stat-verts');
+  vertEl.textContent = '-' + vertPct + '%';
+  vertEl.className   = 'val ' + (vertPct >= 40 ? 'green' : vertPct >= 10 ? 'yellow' : '');
+  document.getElementById('d-size-before').textContent = fmt(b.fileSize);
+  document.getElementById('d-size-after').textContent  = fmt(a.fileSize);
+  document.getElementById('d-size-saved').textContent  = '-' + data.savedPct + '%';
+  document.getElementById('d-verts-before').textContent = fmtN(b.verts);
+  document.getElementById('d-verts-after').textContent  = fmtN(a.verts);
+  document.getElementById('d-tris-before').textContent = fmtN(b.tris);
+  document.getElementById('d-tris-after').textContent  = fmtN(a.tris);
+  document.getElementById('d-tex-before').textContent  = fmt(b.texBytes);
+  document.getElementById('d-tex-after').textContent   = fmt(a.texBytes);
+  const texSaved = b.texBytes - a.texBytes;
+  const texSavedEl = document.getElementById('d-tex-saved');
+  if (texSaved > 0) { texSavedEl.textContent = '-' + ((texSaved/b.texBytes)*100).toFixed(0)+'%'; texSavedEl.style.display='inline'; }
+  else texSavedEl.style.display = 'none';
+  document.getElementById('d-anims').textContent = b.anims > 0 ? `${b.anims} animation(s)` : 'None';
+  const breakdown = document.getElementById('texBreakdown');
+  breakdown.innerHTML = '';
+  if (b.texDetail && b.texDetail.length > 0) {
+    for (const tex of b.texDetail) {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)';
+      const nameEl = document.createElement('span');
+      nameEl.style.cssText = 'color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px';
+      nameEl.title = tex.name; nameEl.textContent = tex.name;
+      const infoEl = document.createElement('span');
+      const fmtShort = tex.mime === 'image/jpeg' ? 'JPG' : tex.mime === 'image/png' ? 'PNG' : '?';
+      infoEl.style.cssText = 'color:var(--accent);flex-shrink:0;margin-left:6px';
+      infoEl.textContent = `${fmtShort} · ${fmt(tex.size)}`;
+      row.appendChild(nameEl); row.appendChild(infoEl); breakdown.appendChild(row);
+    }
+  } else { breakdown.textContent = 'No textures found in model'; }
+  const logList = document.getElementById('logList');
+  logList.innerHTML = '';
+  for (const entry of (data.log || [])) {
+    const el = document.createElement('div');
+    el.className = 'log-item'; el.textContent = '✓ ' + entry; logList.appendChild(el);
+  }
+  showState('results');
+}
+
+function downloadResult() {
+  if (!resultFilename) return;
+  const a = document.createElement('a');
+  a.href = `/download/${resultFilename}`; a.download = resultFilename; a.click();
+}
+
+// ══════════════════════════════════════════════════════
+// ── Three.js viewer with full UE5-style lighting ──────
+// ══════════════════════════════════════════════════════
+function initViewer() {
+  const canvas = document.getElementById('canvas3d');
+  const panel  = canvas.parentElement;
+
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.toneMapping         = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.2;
+  renderer.shadowMap.enabled   = true;
+  renderer.shadowMap.type      = THREE.PCFSoftShadowMap;
+  renderer.outputColorSpace    = THREE.SRGBColorSpace;
+
+  scene  = new THREE.Scene();
+  scene.background = new THREE.Color(0x1a3060);
+
+  camera = new THREE.PerspectiveCamera(45, 1, 0.01, 1000);
+  camera.position.set(0, 1.5, 4);
+
+  controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.06;
+  controls.minDistance   = 0.1;
+  controls.maxDistance   = 200;
+
+  // ── Main sun (DirectionalLight with shadows) ──────
+  sunLight = new THREE.DirectionalLight(0xfff5e0, 1.8);
+  sunLight.castShadow = true;
+  sunLight.shadow.mapSize.width  = 2048;
+  sunLight.shadow.mapSize.height = 2048;
+  sunLight.shadow.camera.near   = 0.1;
+  sunLight.shadow.camera.far    = 200;
+  sunLight.shadow.camera.left   = -15;
+  sunLight.shadow.camera.right  = 15;
+  sunLight.shadow.camera.top    = 15;
+  sunLight.shadow.camera.bottom = -15;
+  sunLight.shadow.bias          = -0.0005;
+  scene.add(sunLight);
+  setSunPosition(45, 60);
+
+  // ── Ambient (sky bounce) ──────────────────────────
+  ambientLight = new THREE.AmbientLight(0xc8d8ff, 0.6);
+  scene.add(ambientLight);
+
+  // ── Hemisphere (sky/ground gradient) ─────────────
+  hemiLight = new THREE.HemisphereLight(0x9ab8ff, 0x6a5430, 0.4);
+  scene.add(hemiLight);
+
+  // ── Fill (opposite to sun, cool sky) ─────────────
+  fillLight = new THREE.DirectionalLight(0x8ab4ff, 0.35);
+  fillLight.position.set(-6, 4, -6);
+  scene.add(fillLight);
+
+  // ── Rim (warm backlight edge pop) ─────────────────
+  rimLight = new THREE.DirectionalLight(0xffcc88, 0.3);
+  rimLight.position.set(0, -3, -10);
+  scene.add(rimLight);
+
+  // ── Ground shadow plane ───────────────────────────
+  const groundMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(40, 40),
+    new THREE.ShadowMaterial({ opacity: 0.3 })
+  );
+  groundMesh.rotation.x = -Math.PI / 2;
+  groundMesh.position.y = -1.5;
+  groundMesh.receiveShadow = true;
+  scene.add(groundMesh);
+
+  // ── Grid ──────────────────────────────────────────
+  const grid = new THREE.GridHelper(20, 20, 0x3a4a70, 0x202840);
+  grid.position.y = -1.5;
+  scene.add(grid);
+
+  clock = new THREE.Clock();
+
+  function resize() {
+    const w = panel.clientWidth, h = panel.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  new ResizeObserver(resize).observe(panel);
+
+  (function animate() {
+    requestAnimationFrame(animate);
+    const dt = clock.getDelta();
+    controls.autoRotate = autoRotate;
+    controls.update();
+    if (animMixer) animMixer.update(dt);
+    renderer.render(scene, camera);
+  })();
+
+  // Start with outdoor preset
+  applyEnvPreset('outdoor');
+}
+
+// ── Sun position (spherical → cartesian) ──────────────
+function setSunPosition(azDeg, elDeg) {
+  const az = (azDeg  * Math.PI) / 180;
+  const el = (elDeg  * Math.PI) / 180;
+  const r  = 15;
+  sunLight.position.set(
+    r * Math.cos(el) * Math.sin(az),
+    r * Math.sin(el),
+    r * Math.cos(el) * Math.cos(az)
+  );
+}
+
+// ── Lighting control callbacks ────────────────────────
+function onSunIntensity(v) {
+  sunLight.intensity = parseFloat(v);
+  document.getElementById('sunIntVal').textContent = parseFloat(v).toFixed(1);
+}
+function onAmbientIntensity(v) {
+  const val = parseFloat(v);
+  ambientLight.intensity = val;
+  hemiLight.intensity    = val * 0.65;
+  document.getElementById('ambIntVal').textContent = val.toFixed(2);
+}
+function onSunAngle(v) {
+  document.getElementById('sunAngVal').textContent = v + '°';
+  setSunPosition(parseInt(v), parseInt(document.getElementById('sunHtSlider').value));
+}
+function onSunHeight(v) {
+  document.getElementById('sunHtVal').textContent = v + '°';
+  setSunPosition(parseInt(document.getElementById('sunAngSlider').value), parseInt(v));
+}
+function onSkyColor(v) {
+  scene.background = new THREE.Color(v);
+  document.getElementById('skyColorLabel').textContent = v;
+  // Tint ambient to loosely follow sky
+  const skyC = new THREE.Color(v);
+  ambientLight.color.set(skyC).lerp(new THREE.Color(0xffffff), 0.45);
+}
+
+// ── Environment presets ───────────────────────────────
+const PRESETS = {
+  outdoor: {
+    label: 'outdoor', sky: '#1a3060',
+    sun:  { color: 0xfff5e0, intensity: 1.8, angle: 45,  height: 60 },
+    amb:  { color: 0xc8d8ff, intensity: 0.6 },
+    hemi: { sky: 0x9ab8ff,   ground: 0x6a5430, intensity: 0.4 },
+    fill: { color: 0x8ab4ff, intensity: 0.35 },
+    rim:  { color: 0xffcc88, intensity: 0.30 },
+    exposure: 1.2,
+  },
+  studio: {
+    label: 'studio', sky: '#0e0e12',
+    sun:  { color: 0xffffff, intensity: 2.4, angle: 30,  height: 70 },
+    amb:  { color: 0xffffff, intensity: 0.9 },
+    hemi: { sky: 0xffffff,   ground: 0x444444, intensity: 0.3 },
+    fill: { color: 0xddeeff, intensity: 0.65 },
+    rim:  { color: 0xffffff, intensity: 0.55 },
+    exposure: 1.0,
+  },
+  sunset: {
+    label: 'sunset', sky: '#3d1c06',
+    sun:  { color: 0xff8833, intensity: 1.6, angle: 10,  height: 7 },
+    amb:  { color: 0xff9966, intensity: 0.5 },
+    hemi: { sky: 0xff7733,   ground: 0x331100, intensity: 0.45 },
+    fill: { color: 0xaa5533, intensity: 0.28 },
+    rim:  { color: 0xff6600, intensity: 0.55 },
+    exposure: 1.1,
+  },
+  night: {
+    label: 'night', sky: '#04060e',
+    sun:  { color: 0x2244aa, intensity: 0.12, angle: 200, height: 12 },
+    amb:  { color: 0x102040, intensity: 0.18 },
+    hemi: { sky: 0x102040,   ground: 0x040608, intensity: 0.12 },
+    fill: { color: 0x2244aa, intensity: 0.12 },
+    rim:  { color: 0x4488ff, intensity: 0.22 },
+    exposure: 0.65,
+  },
+};
+
+function applyEnvPreset(name) {
+  const p = PRESETS[name]; if (!p) return;
+
+  // Mark active button
+  document.querySelectorAll('.env-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.preset === name);
+  });
+
+  // Apply scene
+  scene.background = new THREE.Color(p.sky);
+  sunLight.color.setHex(p.sun.color);    sunLight.intensity = p.sun.intensity;
+  ambientLight.color.setHex(p.amb.color); ambientLight.intensity = p.amb.intensity;
+  hemiLight.color.setHex(p.hemi.sky);
+  hemiLight.groundColor.setHex(p.hemi.ground);
+  hemiLight.intensity = p.hemi.intensity;
+  fillLight.color.setHex(p.fill.color);  fillLight.intensity = p.fill.intensity;
+  rimLight.color.setHex(p.rim.color);    rimLight.intensity  = p.rim.intensity;
+  renderer.toneMappingExposure = p.exposure;
+  setSunPosition(p.sun.angle, p.sun.height);
+
+  // Sync sliders
+  document.getElementById('sunIntSlider').value = p.sun.intensity;
+  document.getElementById('sunIntVal').textContent = p.sun.intensity.toFixed(1);
+  document.getElementById('ambIntSlider').value = p.amb.intensity;
+  document.getElementById('ambIntVal').textContent = p.amb.intensity.toFixed(2);
+  document.getElementById('sunAngSlider').value = p.sun.angle;
+  document.getElementById('sunAngVal').textContent = p.sun.angle + '°';
+  document.getElementById('sunHtSlider').value = p.sun.height;
+  document.getElementById('sunHtVal').textContent = p.sun.height + '°';
+  document.getElementById('skyColorPicker').value = p.sky;
+  document.getElementById('skyColorLabel').textContent = p.sky;
+}
+
+// ── Collapse/expand lighting panel ────────────────────
+function toggleLightingPanel() {
+  lpCollapsed = !lpCollapsed;
+  document.getElementById('lpBody').classList.toggle('collapsed', lpCollapsed);
+  document.getElementById('lpCollapseBtn').textContent = lpCollapsed ? '▼' : '▲';
+}
+
+// ── Model loading ─────────────────────────────────────
+function loadModel(url) {
+  if (model) { scene.remove(model); model = null; animMixer = null; }
+  new GLTFLoader().load(url, gltf => {
+    model = gltf.scene;
+    // Enable shadows on every mesh
+    model.traverse(obj => {
+      if (obj.isMesh) { obj.castShadow = true; obj.receiveShadow = true; }
+    });
+    // Auto-scale & center
+    const box  = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    const ctr  = box.getCenter(new THREE.Vector3());
+    const sc   = 3.0 / Math.max(size.x, size.y, size.z);
+    model.scale.setScalar(sc);
+    model.position.set(-ctr.x*sc, -ctr.y*sc, -ctr.z*sc);
+    scene.add(model);
+
+    // Fit shadow frustum
+    const hs = (Math.max(size.x, size.y, size.z) * sc) / 2 + 2;
+    Object.assign(sunLight.shadow.camera, { left:-hs*4, right:hs*4, top:hs*4, bottom:-hs*4 });
+    sunLight.shadow.camera.updateProjectionMatrix();
+
+    camera.position.set(0, 0.5, 4);
+    controls.target.set(0, 0, 0);
+    controls.update();
+
+    if (gltf.animations?.length) {
+      animMixer = new THREE.AnimationMixer(model);
+      animMixer.clipAction(gltf.animations[0]).play();
+    }
+    document.getElementById('viewerLabel').textContent =
+      `Optimized model • ${gltf.animations?.length || 0} animation(s)`;
+  }, undefined, err => console.error('GLB load error:', err));
+}
+
+function resetCamera() {
+  camera.position.set(0, 0.5, 4); controls.target.set(0, 0, 0); controls.update();
+}
+
+function toggleWireframe() {
+  wireframeOn = !wireframeOn;
+  if (!model) return;
+  model.traverse(obj => {
+    if (obj.isMesh && obj.material) {
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach(m => {
+        m.wireframe = wireframeOn;
+        if (wireframeOn) { m._origColor = m.color?.clone(); if (m.color) m.color.set(0x7cb8ff); }
+        else { if (m._origColor && m.color) m.color.copy(m._origColor); }
+      });
+    }
+  });
+  document.querySelectorAll('.viewer-btn')[1].classList.toggle('active', wireframeOn);
+}
+
+function toggleAutoRotate() {
+  autoRotate = !autoRotate;
+  document.querySelectorAll('.viewer-btn')[2].classList.toggle('active', autoRotate);
+}
+
+initViewer();
+</script>
+</body>
+</html>
