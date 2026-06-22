@@ -1,78 +1,91 @@
 # GLB Optimizer — Local Web App
 ## For Unreal Engine 5
 
-A local web tool to compress .glb 3D models with a live 3D preview and before/after stats.
+A lightweight local web tool for compressing `.glb` 3D models with live preview, size comparison, and UE5-compatible output.
 
 ---
 
-## Setup (one time only)
+## Quick Start
 
-1. Put ALL these files in one folder:
+1. Place these files in the same folder:
    - `server.mjs`
    - `index.html`
    - `package.json`
 
 2. Open a terminal in that folder and run:
-   ```
+   ```powershell
    npm install
    ```
-   This takes 1-2 minutes. You only do this once.
+
+3. Start the app:
+   ```powershell
+   node server.mjs
+   ```
+
+4. Open your browser and visit:
+   ```text
+   http://localhost:3000
+   ```
+
+5. To stop the server, press `Ctrl+C`.
 
 ---
 
-## Run it
+## How it works
 
-Every time you want to use it:
+- Upload a `.glb` file
+- Choose compression options
+- Preview the optimized model in 3D
+- Download the final `.glb`
 
-```
-node server.mjs
-```
-
-Then open your browser and go to:
-```
-http://localhost:3000
-```
-
-To stop the server, press Ctrl+C in the terminal.
+This makes it easy to reduce file size before importing assets into Unreal Engine 5.
 
 ---
 
-## How to use
+## User Guide
 
-1. **Upload** — drop your .glb file onto the upload zone
-2. **Choose options** — toggle what compression steps to apply
-3. **Set simplify ratio** — 50% is a good start. Lower = smaller file, less detail
-4. **Click Optimize** — wait for processing (big models take 30-60 seconds)
-5. **View result** — 3D model loads, rotate with mouse, check stats
-6. **Download** — click the green button to save the optimized .glb
-
----
-
-## Options explained
-
-| Option | What it does | When to use |
-|--------|-------------|-------------|
-| Mesh Simplification | Reduces polygon count | Always — biggest size win for geometry-heavy models |
-| Texture Compression | PNG → JPEG (60-80% smaller) | Always — huge win if Meshy exported PNG textures |
-| Texture Resize | Caps textures at 2K or 1K | Use 2K for quality, 1K for maximum compression |
-| Animation Resample | Reduces animation keyframe data | Enable if model has animations/bones |
-| Remove Unused Data | Deletes duplicates and empty nodes | Always — safe and free size reduction |
+1. **Upload** your `.glb` file using the upload area.
+2. **Choose options** for mesh simplification, texture compression, and more.
+3. **Set simplify ratio** — `50%` is a good default.
+4. **Click Optimize** and wait for the process to finish.
+5. **Preview** the optimized model in the built-in viewer.
+6. **Download** the optimized `.glb` file.
 
 ---
 
-## Simplify Ratio guide
+## Options Explained
 
-| Ratio | Vertices kept | Expected size reduction | Quality |
-|-------|--------------|------------------------|---------|
-| 75%   | 75%          | ~35-45%                | Nearly identical |
-| 50%   | 50%          | ~50-60%                | Good, minor loss |
-| 25%   | 25%          | ~65-75%                | Visible, acceptable |
+| Option | What it does | Best use case |
+|--------|-------------|---------------|
+| Mesh Simplification | Reduces polygon count | Use for geometry-heavy models |
+| Texture Compression | Converts textures to smaller formats | Use when textures are large |
+| Texture Resize | Limits texture resolution | Use 2K for quality, 1K for smaller size |
+| Animation Resample | Shrinks animation keyframe data | Enable only for animated models |
+| Remove Unused Data | Removes unused nodes, meshes, and metadata | Always enable for extra savings |
+
+---
+
+## Simplify Ratio Guide
+
+| Ratio | What it keeps | Expected result |
+|-------|---------------|-----------------|
+| 75% | Most detail | Moderate compression, high quality |
+| 50% | Good balance | Strong compression, good quality |
+| 25% | Maximum reduction | Smaller file, noticeable detail loss |
 
 ---
 
 ## Tips
 
-- Check the compressed model at https://gltf.report before importing to UE5
-- Wireframe button shows polygon density
-- Auto Rotate lets you inspect the model from all angles
-- Output is always UE5-compatible (no meshopt, no WebP, no Draco)
+- View the output in `http://localhost:3000` before downloading.
+- Use the preview controls to rotate and inspect the optimized mesh.
+- Smaller textures and fewer vertices generally produce the biggest file reduction.
+- This tool is designed to generate UE5-friendly `.glb` files.
+
+---
+
+## Notes
+
+- Install dependencies only once with `npm install`.
+- If the app does not open, check for Node.js and package installation issues.
+- The optimized file is ready to import into Unreal Engine 5.
