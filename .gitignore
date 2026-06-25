@@ -1,0 +1,11 @@
+# Dependencies — never commit these; reinstall with `npm install`
+node_modules/
+
+# Optimizer output / scratch files (can be large binaries)
+tmp/
+
+# Logs & OS cruft
+npm-debug.log*
+*.log
+.DS_Store
+Thumbs.db

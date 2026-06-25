@@ -1,0 +1,15 @@
+{
+  "// note": "Keeps VS Code's file watcher, search, and git from churning on deps and large GLB outputs",
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/tmp/**": true,
+    "**/.git/objects/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/tmp": true
+  },
+  "files.exclude": {
+    "**/node_modules": true
+  }
+}
