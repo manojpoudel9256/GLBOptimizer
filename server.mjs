@@ -13,7 +13,7 @@ import { NodeIO }         from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import {
   simplify, weld, dedup, prune,
-  flatten, resample, listTextureSlots,
+  flatten, resample,
 } from '@gltf-transform/functions';
 import { MeshoptSimplifier, MeshoptDecoder } from 'meshoptimizer';
 import sharp from 'sharp';
@@ -24,16 +24,10 @@ const TMP_DIR   = path.join(__dirname, 'tmp');
 
 if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR);
 
-// ── Extensions UE5 can't import ──────────────────────────────────────────────
+// Extensions UE5 can't import
 const STRIP_EXTS = new Set([
   'EXT_meshopt_compression', 'EXT_texture_webp', 'KHR_texture_basisu',
 ]);
-
-const DATA_SLOTS = new Set([
-  'occlusionTexture','metallicRoughnessTexture','clearcoatRoughnessTexture',
-  'transmissionTexture','thicknessTexture','specularTexture','sheenRoughnessTexture',
-]);
-const NORMAL_SLOTS = new Set(['normalTexture','clearcoatNormalTexture']);
 
 // ── Wait for wasm engines ─────────────────────────────────────────────────────
 await MeshoptSimplifier.ready;
@@ -79,66 +73,68 @@ function getDocStats(doc, fileSize) {
   };
 }
 
-async function hasRealAlpha(buf) {
-  try {
-    const meta = await sharp(buf).metadata();
-    if (!meta.hasAlpha || meta.channels < 4) return false;
-    const { data } = await sharp(buf).raw().toBuffer({ resolveWithObject: true });
-    const step = Math.max(4, Math.floor(data.length / (4 * 4096)));
-    for (let i = 3; i < data.length; i += step * 4) {
-      if (data[i] < 250) return true;
-    }
-    return false;
-  } catch { return false; }
-}
-
+// ── Texture processor ─────────────────────────────────────────────────────────
+// ALWAYS outputs PNG regardless of input format (JPG, PNG, WebP, etc.)
+// This is required for UE5 compatibility.
 async function compressTexture(tex, opts) {
   const imgData = tex.getImage();
   if (!imgData || imgData.length === 0) return 0;
 
   const origSize = imgData.length;
-  const origMime = tex.getMimeType();
-  const slots    = listTextureSlots(tex);
-  const isData   = slots.some(s => DATA_SLOTS.has(s));
-  const isNormal = slots.some(s => NORMAL_SLOTS.has(s));
+  const origMime = tex.getMimeType() || '';
 
+  // Determine if we need to do anything at all
+  const alreadyPng   = origMime === 'image/png';
+  const willResize   = false; // determined after metadata
+  const willCompress = opts.texCompress;
+
+  // Get image dimensions for resize check
   let meta;
   try { meta = await sharp(imgData).metadata(); }
   catch { return 0; }
 
-  const maxPx = opts.texResize === '1K' ? 1024 : 2048;
-  const needsResize = (meta.width || 0) > maxPx || (meta.height || 0) > maxPx;
+  const w = meta.width  || 0;
+  const h = meta.height || 0;
 
+  // Determine max size from options
+  const maxPx = opts.texResize === '1K'  ? 1024
+              : opts.texResize === '2K'  ? 2048
+              : opts.texResize === '4K'  ? 4096
+              : opts.texResize === '512' ? 512
+              : 99999; // 'none' — no resize
+
+  const needsResize = (opts.texResize && opts.texResize !== 'none') && (w > maxPx || h > maxPx);
+
+  // Skip only if: already PNG, no resize needed, and texCompress is off
+  // i.e. there is literally nothing to do
+  if (alreadyPng && !needsResize && !willCompress) return 0;
+
+  // Build sharp pipeline
   let pipeline = sharp(imgData);
+
   if (needsResize) {
     pipeline = pipeline.resize(maxPx, maxPx, {
-      fit: 'inside', withoutEnlargement: true, kernel: sharp.kernel.lanczos3,
+      fit: 'inside',
+      withoutEnlargement: true,
+      kernel: sharp.kernel.lanczos3,
     });
   }
 
-  let compressed, mimeType;
+  // ALWAYS output as PNG — UE5 requirement
+  // compressionLevel 9 = maximum lossless compression
+  const compressed = await pipeline.png({
+    compressionLevel: 9,
+    adaptiveFiltering: true,
+    effort: 10,
+  }).toBuffer();
 
-  if (isData) {
-    compressed = await pipeline.png({ compressionLevel: 9 }).toBuffer();
-    mimeType = 'image/png';
-    if (compressed.length >= origSize && !needsResize) return 0;
-  } else {
-    const realAlpha = origMime === 'image/png' ? await hasRealAlpha(imgData) : false;
-    if (realAlpha) {
-      compressed = await pipeline.png({ compressionLevel: 9 }).toBuffer();
-      mimeType = 'image/png';
-      if (compressed.length >= origSize && !needsResize) return 0;
-    } else if (isNormal) {
-      compressed = await pipeline.jpeg({ quality: 90, chromaSubsampling: '4:4:4' }).toBuffer();
-      mimeType = 'image/jpeg';
-    } else {
-      compressed = await pipeline.jpeg({ quality: 85, chromaSubsampling: '4:2:0' }).toBuffer();
-      mimeType = 'image/jpeg';
-    }
-  }
-
+  // ALWAYS apply — even if PNG is larger than original JPG.
+  // Format correctness (PNG for UE5) takes priority over raw byte size here.
+  // The mesh simplification and resize steps provide the major size savings.
   tex.setImage(compressed);
-  tex.setMimeType(mimeType);
+  tex.setMimeType('image/png');
+
+  // Return bytes saved (can be negative if JPG→PNG inflates, that's fine)
   return origSize - compressed.length;
 }
 
@@ -155,15 +151,15 @@ async function compressGLB(inputPath, outputPath, opts) {
     if (STRIP_EXTS.has(ext.extensionName)) ext.dispose();
   }
 
-  const inputSize  = fs.statSync(inputPath).size;
+  const inputSize   = fs.statSync(inputPath).size;
   const statsBefore = getDocStats(doc, inputSize);
 
   const log = [];
 
   // STEP 1 — Mesh simplification
   if (opts.simplify) {
-    const ratio = parseFloat(opts.simplifyRatio) || 0.5;
-    const error = parseFloat(opts.simplifyError) || 0.01;
+    const ratio   = parseFloat(opts.simplifyRatio) || 0.5;
+    const error   = parseFloat(opts.simplifyError) || 0.01;
     const vBefore = statsBefore.verts;
     await doc.transform(
       weld({ tolerance: 0.0001 }),
@@ -179,14 +175,29 @@ async function compressGLB(inputPath, outputPath, opts) {
     log.push(`Animations: keyframes resampled losslessly`);
   }
 
-  // STEP 3 — Texture compression
-  if (opts.texCompress || opts.texResize) {
-    const textures = doc.getRoot().listTextures();
-    let totalSaved = 0;
+  // STEP 3 — Texture processing (convert ALL textures to PNG)
+  {
+    const textures  = doc.getRoot().listTextures();
+    let totalSaved  = 0;
+    let converted   = 0;
+
     for (const tex of textures) {
-      totalSaved += await compressTexture(tex, opts);
+      const mimeBefore = tex.getMimeType() || 'unknown';
+      const saved      = await compressTexture(tex, opts);
+      totalSaved      += saved;
+      if (mimeBefore !== 'image/png') converted++;
     }
-    log.push(`Textures: saved ${(totalSaved/1024/1024).toFixed(2)} MB from ${textures.length} texture(s)`);
+
+    if (textures.length > 0) {
+      const savedMB = (totalSaved / 1024 / 1024).toFixed(2);
+      const sign    = totalSaved >= 0 ? 'saved' : 'added';
+      const absMB   = Math.abs(parseFloat(savedMB)).toFixed(2);
+      log.push(
+        `Textures: ${textures.length} texture(s) → all converted to PNG` +
+        (converted > 0 ? ` (${converted} format-converted)` : '') +
+        ` · ${sign} ${absMB} MB`
+      );
+    }
   }
 
   // STEP 4 — Cleanup
@@ -199,10 +210,10 @@ async function compressGLB(inputPath, outputPath, opts) {
   const writerIO = new NodeIO().registerExtensions(ALL_EXTENSIONS);
   await writerIO.write(outputPath, doc);
 
-  const outputSize   = fs.statSync(outputPath).size;
-  const statsAfter   = getDocStats(doc, outputSize);
-  const savedBytes   = inputSize - outputSize;
-  const savedPct     = ((savedBytes / inputSize) * 100).toFixed(1);
+  const outputSize  = fs.statSync(outputPath).size;
+  const statsAfter  = getDocStats(doc, outputSize);
+  const savedBytes  = inputSize - outputSize;
+  const savedPct    = ((savedBytes / inputSize) * 100).toFixed(1);
 
   return {
     ok: true,
@@ -224,16 +235,14 @@ function parseMultipart(body, boundary) {
     const boundaryIdx = body.indexOf(boundaryBuf, pos);
     if (boundaryIdx === -1) break;
     pos = boundaryIdx + boundaryBuf.length;
-    if (body[pos] === 0x2d && body[pos+1] === 0x2d) break; // '--'
-    if (body[pos] === 0x0d) pos += 2; // \r\n
+    if (body[pos] === 0x2d && body[pos+1] === 0x2d) break;
+    if (body[pos] === 0x0d) pos += 2;
 
-    // Read headers
     const headerEnd = body.indexOf(Buffer.from('\r\n\r\n'), pos);
     if (headerEnd === -1) break;
     const headerStr = body.slice(pos, headerEnd).toString();
     pos = headerEnd + 4;
 
-    // Find next boundary
     const nextBoundary = body.indexOf(boundaryBuf, pos);
     const contentEnd   = nextBoundary === -1 ? body.length : nextBoundary - 2;
     const content      = body.slice(pos, contentEnd);
@@ -320,11 +329,11 @@ const server = http.createServer(async (req, res) => {
           cleanup:       parts.cleanup?.value        === 'true',
         };
 
-        const origName     = parts.file.filename || 'model.glb';
-        const baseName     = origName.replace(/\.glb$/i, '');
-        const inputPath    = path.join(TMP_DIR, `in_${Date.now()}.glb`);
-        const outputName   = `${baseName}_optimized.glb`;
-        const outputPath   = path.join(TMP_DIR, outputName);
+        const origName   = parts.file.filename || 'model.glb';
+        const baseName   = origName.replace(/\.glb$/i, '');
+        const inputPath  = path.join(TMP_DIR, `in_${Date.now()}.glb`);
+        const outputName = `${baseName}_optimized.glb`;
+        const outputPath = path.join(TMP_DIR, outputName);
 
         fs.writeFileSync(inputPath, parts.file.buffer);
 
@@ -337,9 +346,7 @@ const server = http.createServer(async (req, res) => {
           .sort((a, b) => a.t - b.t);
         if (tmpFiles.length > 20) {
           tmpFiles.slice(0, tmpFiles.length - 20)
-            .forEach(({ f }) => {
-              try { fs.unlinkSync(path.join(TMP_DIR, f)); } catch {}
-            });
+            .forEach(({ f }) => { try { fs.unlinkSync(path.join(TMP_DIR, f)); } catch {} });
         }
 
         res.writeHead(200, { 'Content-Type': 'application/json' });

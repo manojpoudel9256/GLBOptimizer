@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GLB Optimizer — UE5 Ready</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script type="importmap">
 {
   "imports": {
@@ -16,596 +19,1013 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:       #0d0f14;
-  --surface:  #141720;
-  --card:     #1a1e2a;
-  --border:   #252b3b;
-  --accent:   #4f8ef7;
-  --accent2:  #7c5af7;
-  --green:    #2dca73;
-  --yellow:   #f5a623;
-  --red:      #f74f4f;
-  --text:     #e8eaf0;
-  --muted:    #7b82a0;
-  --radius:   12px;
+  --bg:        #080a0f;
+  --surface:   #0e1118;
+  --card:      #141820;
+  --card2:     #1a1f2e;
+  --border:    #1f2638;
+  --border2:   #2a3350;
+  --accent:    #4f8ef7;
+  --accent2:   #7c5af7;
+  --accent-glow: rgba(79,142,247,0.18);
+  --green:     #2dca73;
+  --yellow:    #f5a623;
+  --orange:    #ff9944;
+  --red:       #f74f4f;
+  --viewer-bg: #060810;
+  --text:      #dce1f0;
+  --text2:     #a8b0cc;
+  --muted:     #5a6380;
+  --radius:    12px;
   --radius-sm: 8px;
+  --radius-xs: 6px;
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
 }
 
-body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+/* ── Light theme ── */
+:root[data-theme="light"] {
+  --bg:        #eef1f7;
+  --surface:   #ffffff;
+  --card:      #ffffff;
+  --card2:     #f1f4fa;
+  --border:    #e3e7f0;
+  --border2:   #d2d8e6;
+  --accent-glow: rgba(79,142,247,0.10);
+  --viewer-bg: #e9edf5;
+  --text:      #1a1f2e;
+  --text2:     #44506b;
+  --muted:     #8590ad;
+}
 
-/* ── Header ── */
+body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; transition: background 0.25s, color 0.25s; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+/* ── Language toggle ── */
+.lang-toggle {
+  display: flex; align-items: center; gap: 2px;
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: 20px; padding: 3px; flex-shrink: 0;
+}
+.lang-btn {
+  padding: 3px 10px; border-radius: 14px; border: none;
+  background: transparent; color: var(--muted);
+  font-size: 11px; font-weight: 700; cursor: pointer;
+  transition: all 0.18s; letter-spacing: 0.03em;
+}
+.lang-btn.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(79,142,247,0.35);
+}
+
+/* ── Theme toggle ── */
+.theme-toggle {
+  width: 34px; height: 34px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: 9px; color: var(--text2);
+  font-size: 16px; cursor: pointer; line-height: 1;
+  transition: all 0.18s;
+}
+.theme-toggle:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+
+/* ══════════════════════════════════════════
+   HEADER
+══════════════════════════════════════════ */
 header {
   display: flex; align-items: center; gap: 14px;
-  padding: 20px 32px;
+  padding: 16px 28px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
-  position: sticky; top: 0; z-index: 100;
+  position: sticky; top: 0; z-index: 100; flex-shrink: 0;
+  backdrop-filter: blur(12px);
 }
 .logo {
-  width: 36px; height: 36px;
+  width: 34px; height: 34px; flex-shrink: 0;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
-  border-radius: 10px;
+  border-radius: 9px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
+  font-size: 17px;
+  box-shadow: 0 0 16px rgba(79,142,247,0.35);
 }
-header h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
-header p  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.header-text h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.03em; }
+.header-text p  { font-size: 11px; color: var(--muted); margin-top: 1px; }
 .status-badge {
   margin-left: auto; font-size: 11px; padding: 4px 10px; border-radius: 20px;
-  background: rgba(45,202,115,0.12); color: var(--green); border: 1px solid rgba(45,202,115,0.25);
+  background: rgba(45,202,115,0.1); color: var(--green);
+  border: 1px solid rgba(45,202,115,0.2);
+  display: flex; align-items: center; gap: 5px;
 }
+.status-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation: pulse-dot 2s ease-in-out infinite; }
+@keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
 
-/* ── Layout ── */
-main { display: grid; grid-template-columns: 340px 1fr; gap: 0; min-height: calc(100vh - 65px); }
+/* ══════════════════════════════════════════
+   LAYOUT
+══════════════════════════════════════════ */
+main { display: grid; grid-template-columns: 320px 1fr; flex: 1; min-height: 0; }
 
-/* ── Sidebar ── */
+/* ══════════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════════ */
 aside {
   background: var(--surface); border-right: 1px solid var(--border);
-  padding: 24px 20px; overflow-y: auto;
-  display: flex; flex-direction: column; gap: 20px;
+  padding: 20px 16px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 18px;
 }
-
 .section-label {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  font-size: 9px; font-weight: 800; letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
 }
 
 /* ── Upload zone ── */
 .upload-zone {
-  border: 2px dashed var(--border); border-radius: var(--radius);
-  padding: 28px 16px; text-align: center; cursor: pointer;
-  transition: all 0.2s; background: var(--card); position: relative;
+  border: 2px dashed var(--border2); border-radius: var(--radius);
+  padding: 24px 14px; text-align: center; cursor: pointer;
+  transition: all 0.25s; background: var(--card); position: relative;
 }
-.upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: rgba(79,142,247,0.06); }
-.upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-.upload-icon { font-size: 28px; margin-bottom: 10px; display: block; }
-.upload-zone h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-.upload-zone p  { font-size: 12px; color: var(--muted); }
-.file-chosen { font-size: 12px; color: var(--green); margin-top: 8px; display: none; font-weight: 500; }
+.upload-zone:hover, .upload-zone.drag {
+  border-color: var(--accent); background: var(--accent-glow);
+  box-shadow: 0 0 0 4px rgba(79,142,247,0.06);
+}
+.upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width:100%; height:100%; }
+.upload-icon { font-size: 26px; margin-bottom: 8px; display: block; }
+.upload-zone h3 { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.upload-zone p  { font-size: 11px; color: var(--muted); }
+.file-chosen { font-size: 11px; color: var(--green); margin-top: 8px; display: none; font-weight: 600;
+  background: rgba(45,202,115,0.08); padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(45,202,115,0.15); }
 
-/* ── Options ── */
-.options-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
-.option-row {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer;
+/* ── Preset row ── */
+.preset-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 7px; }
+.preset-btn {
+  padding: 7px 4px; border-radius: var(--radius-xs); border: 1px solid var(--border2);
+  background: var(--card); color: var(--text2); font-size: 10px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; text-align: center; line-height: 1.4;
 }
+.preset-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+.preset-btn.active { border-color: var(--accent); background: rgba(79,142,247,0.15); color: var(--accent); }
+.preset-hint { font-size: 10px; color: var(--muted); text-align: center; line-height: 1.5; }
+
+/* ── Options card ── */
+.options-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+.option-row {
+  display: flex; align-items: flex-start; gap: 11px; padding: 9px 0;
+  border-bottom: 1px solid var(--border); cursor: pointer;
+  transition: opacity 0.15s;
+}
+.option-row:hover { opacity: 0.85; }
 .option-row:last-child { border-bottom: none; padding-bottom: 0; }
 .option-row:first-child { padding-top: 0; }
 .toggle {
-  width: 38px; height: 22px; background: var(--border); border-radius: 11px;
+  width: 36px; height: 20px; background: var(--border2); border-radius: 10px;
   position: relative; flex-shrink: 0; margin-top: 2px; transition: background 0.2s; cursor: pointer;
 }
 .toggle::after {
-  content: ''; position: absolute; left: 3px; top: 3px;
-  width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.2s;
+  content:''; position:absolute; left:3px; top:3px; width:14px; height:14px;
+  border-radius:50%; background:#fff; transition:transform 0.2s;
 }
 .toggle.on { background: var(--accent); }
 .toggle.on::after { transform: translateX(16px); }
-.option-text { flex: 1; }
-.option-text strong { font-size: 13px; font-weight: 600; display: block; margin-bottom: 2px; }
-.option-text span   { font-size: 11px; color: var(--muted); line-height: 1.4; }
+.option-text { flex:1; }
+.option-text strong { font-size: 12px; font-weight: 600; display: block; margin-bottom: 2px; }
+.option-text span   { font-size: 10px; color: var(--muted); line-height: 1.4; }
 
 .png-badge {
-  font-size: 11px; color: #a78bfa;
-  background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.25);
-  border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; text-align: center;
+  font-size: 10px; color: #a78bfa;
+  background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.2);
+  border-radius: var(--radius-xs); padding: 5px 9px; margin-bottom: 10px; text-align: center;
 }
 
-.sub-options { display: none; padding: 10px 0 4px; gap: 8px; flex-direction: column; }
-.sub-options.visible { display: flex; }
-.sub-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-.slider-row { display: flex; align-items: center; gap: 10px; }
-.slider-row input[type=range] { flex: 1; accent-color: var(--accent); height: 4px; }
-.slider-val { font-size: 12px; font-weight: 600; color: var(--accent); min-width: 36px; text-align: right; }
+.sub-options { display:none; padding:9px 0 3px; gap:7px; flex-direction:column; }
+.sub-options.visible { display:flex; }
+.sub-label { font-size:10px; color:var(--muted); margin-bottom:3px; }
+.slider-row { display:flex; align-items:center; gap:9px; }
+.slider-row input[type=range] { flex:1; accent-color:var(--accent); height:3px; cursor:pointer; }
+.slider-val { font-size:11px; font-weight:700; color:var(--accent); min-width:32px; text-align:right; }
 
-.preset-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
-.preset-btn {
-  padding: 7px 4px; border-radius: var(--radius-sm); border: 1px solid var(--border);
-  background: var(--card); color: var(--text); font-size: 11px; font-weight: 500;
-  cursor: pointer; transition: all 0.15s; text-align: center; line-height: 1.3;
-}
-.preset-btn:hover { border-color: var(--accent); color: var(--accent); }
-.preset-btn.active { border-color: var(--accent); background: rgba(79,142,247,0.12); color: var(--accent); }
-.preset-hint { font-size: 11px; color: var(--muted); text-align: center; }
-
-.select-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.select-row { display:grid; grid-template-columns:repeat(4,1fr); gap:3px; }
 .select-btn {
-  flex: 1; padding: 6px 0; border-radius: 6px; border: 1px solid var(--border);
-  background: var(--surface); color: var(--muted); font-size: 12px; font-weight: 500;
-  cursor: pointer; text-align: center; transition: all 0.15s;
+  padding:5px 0; border-radius:5px; border:1px solid var(--border);
+  background:var(--surface); color:var(--muted); font-size:11px; font-weight:500;
+  cursor:pointer; text-align:center; transition:all 0.15s;
 }
-.select-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(79,142,247,0.08); }
+.select-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(79,142,247,0.08); }
 
 /* ── Compress button ── */
 .compress-btn {
-  width: 100%; padding: 13px; border-radius: var(--radius-sm); border: none;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
-  transition: opacity 0.2s, transform 0.1s; letter-spacing: 0.01em;
+  width:100%; padding:12px; border-radius:var(--radius-sm); border:none;
+  background:linear-gradient(135deg, var(--accent), var(--accent2));
+  color:#fff; font-size:13px; font-weight:700; cursor:pointer;
+  transition:all 0.2s; letter-spacing:0.01em;
+  box-shadow: 0 4px 20px rgba(79,142,247,0.3);
 }
-.compress-btn:hover  { opacity: 0.9; }
-.compress-btn:active { transform: scale(0.98); }
-.compress-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.compress-btn:hover  { opacity:0.9; transform:translateY(-1px); box-shadow:0 6px 24px rgba(79,142,247,0.4); }
+.compress-btn:active { transform:scale(0.98) translateY(0); }
+.compress-btn:disabled { opacity:0.3; cursor:not-allowed; transform:none; box-shadow:none; }
 
-/* ── Main content area ── */
-.content { display: flex; flex-direction: column; overflow: hidden; }
+/* ══════════════════════════════════════════
+   CONTENT AREA
+══════════════════════════════════════════ */
+.content { display:flex; flex-direction:column; overflow:hidden; }
 
-/* ── Welcome state ── */
+/* ── Welcome ── */
 .welcome {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  flex: 1; gap: 16px; color: var(--muted); padding: 40px; text-align: center;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  flex:1; gap:14px; color:var(--muted); padding:40px; text-align:center;
 }
-.welcome-icon { font-size: 48px; opacity: 0.4; }
-.welcome h2 { font-size: 18px; color: var(--text); opacity: 0.5; }
-.welcome p  { font-size: 13px; max-width: 360px; line-height: 1.6; }
+.welcome-icon { font-size:52px; opacity:0.25; filter:grayscale(0.3); }
+.welcome h2 { font-size:17px; color:var(--text); opacity:0.4; font-weight:600; }
+.welcome p  { font-size:12px; max-width:340px; line-height:1.7; }
 
 /* ── Progress ── */
 .progress-wrap {
-  display: none; flex-direction: column; align-items: center; justify-content: center;
-  flex: 1; gap: 20px; padding: 40px;
+  display:none; flex-direction:column; align-items:center; justify-content:center;
+  flex:1; gap:20px; padding:40px;
 }
-.progress-wrap.show { display: flex; }
+.progress-wrap.show { display:flex; }
 .spinner {
-  width: 48px; height: 48px; border: 3px solid var(--border);
-  border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;
+  width:44px; height:44px; border:3px solid var(--border);
+  border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-.progress-label { font-size: 14px; color: var(--muted); }
-.progress-steps { display: flex; flex-direction: column; gap: 6px; max-width: 320px; width: 100%; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.progress-label { font-size:13px; color:var(--muted); }
+.progress-steps { display:flex; flex-direction:column; gap:6px; max-width:300px; width:100%; }
 .step-item {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 12px; color: var(--muted); padding: 8px 12px;
-  border-radius: 6px; background: var(--card);
+  display:flex; align-items:center; gap:10px; font-size:12px; color:var(--muted);
+  padding:8px 12px; border-radius:var(--radius-xs); background:var(--card);
+  border:1px solid transparent; transition:all 0.3s;
 }
-.step-item.active { color: var(--text); background: rgba(79,142,247,0.1); }
-.step-item.done   { color: var(--green); }
-.step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
-.step-item.active .step-dot { background: var(--accent); animation: pulse 1s ease-in-out infinite; }
-.step-item.done  .step-dot  { background: var(--green); }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.step-item.active { color:var(--text); background:var(--accent-glow); border-color:rgba(79,142,247,0.2); }
+.step-item.done   { color:var(--green); }
+.step-dot { width:7px; height:7px; border-radius:50%; background:var(--border2); flex-shrink:0; transition:background 0.3s; }
+.step-item.active .step-dot { background:var(--accent); animation:pulse-dot 1s ease-in-out infinite; }
+.step-item.done  .step-dot  { background:var(--green); }
 
-/* ── Results ── */
-.results { display: none; flex-direction: column; height: 100%; overflow: hidden; }
-.results.show { display: flex; }
+/* ── Error ── */
+.error-msg {
+  display:none; flex-direction:column; align-items:center; justify-content:center;
+  flex:1; gap:12px; color:var(--red); padding:40px; text-align:center;
+}
+.error-msg.show { display:flex; }
+.error-msg h3 { font-size:16px; font-weight:600; }
+.error-msg p  { font-size:12px; color:var(--muted); max-width:300px; line-height:1.6; }
 
+/* ══════════════════════════════════════════
+   RESULTS
+══════════════════════════════════════════ */
+.results { display:none; flex-direction:column; height:100%; overflow:hidden; }
+.results.show { display:flex; }
+
+/* Stats bar */
 .stats-bar {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); flex-shrink: 0;
+  display:grid; grid-template-columns:repeat(4,1fr);
+  gap:1px; background:var(--border); border-bottom:1px solid var(--border); flex-shrink:0;
 }
-.stat-cell { background: var(--surface); padding: 14px 16px; text-align: center; }
-.stat-cell .val { font-size: 20px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
-.stat-cell .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
-.val.green { color: var(--green); }
-.val.yellow { color: var(--yellow); }
-.val.red { color: var(--red); }
+.stat-cell { background:var(--surface); padding:12px 14px; text-align:center; }
+.stat-cell .val { font-size:19px; font-weight:800; line-height:1; margin-bottom:5px; letter-spacing:-0.02em; }
+.stat-cell .lbl { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; }
+.val.green { color:var(--green); }
+.val.yellow { color:var(--yellow); }
+.val.red    { color:var(--red); }
+.stat-mini-bar { width:100%; height:3px; background:rgba(255,255,255,0.05); border-radius:2px; margin:6px 0 0; overflow:hidden; }
+.stat-mini-fill { height:100%; border-radius:2px; width:0%; transition:width 1.2s cubic-bezier(0.22,1,0.36,1); }
+.stat-mini-fill.green  { background:linear-gradient(90deg,#2dca73,#3defaa); }
+.stat-mini-fill.yellow { background:linear-gradient(90deg,#f5a623,#f7cc6a); }
+.stat-mini-fill.red    { background:linear-gradient(90deg,#f74f4f,#fa8080); }
 
-.viewer-wrap { display: grid; grid-template-columns: 1fr 300px; flex: 1; overflow: hidden; min-height: 0; }
-
-/* ── 3D Viewer ── */
-.viewer-panel { position: relative; background: #0a0c10; overflow: hidden; }
-#canvas3d { width: 100%; height: 100%; display: block; }
-
-.viewer-controls {
-  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
-  display: flex; gap: 6px;
-  background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
-  border: 1px solid var(--border); border-radius: 20px; padding: 6px 10px;
+/* Insight bar */
+.insight-bar {
+  display:flex; align-items:center; gap:0; flex-shrink:0;
+  background:var(--card); border-bottom:1px solid var(--border);
+  font-size:11px; overflow:hidden;
 }
-.viewer-btn {
-  padding: 5px 12px; border-radius: 14px; border: none;
-  background: transparent; color: var(--muted); font-size: 11px; font-weight: 500;
-  cursor: pointer; transition: all 0.15s;
+.insight-item {
+  display:flex; align-items:center; gap:6px; padding:8px 14px;
+  border-right:1px solid var(--border); color:var(--muted); white-space:nowrap;
 }
-.viewer-btn.active, .viewer-btn:hover { background: var(--accent); color: #fff; }
+.insight-item strong { color:var(--text2); font-weight:600; }
+.insight-copy {
+  margin-left:auto; padding:6px 12px; border:none; background:transparent;
+  color:var(--muted); font-size:11px; cursor:pointer; transition:color 0.15s;
+  display:flex; align-items:center; gap:5px; border-left:1px solid var(--border);
+  white-space:nowrap;
+}
+.insight-copy:hover { color:var(--accent); }
 
+/* ══════════════════════════════════════════
+   VIEWER AREA
+══════════════════════════════════════════ */
+.viewer-wrap {
+  display:grid; grid-template-columns:1fr 290px;
+  flex:1; overflow:hidden; min-height:0;
+}
+.viewer-column { display:flex; flex-direction:column; overflow:hidden; }
+
+/* Tab bar */
+.viewer-tab-bar {
+  display:flex; align-items:center; gap:3px; padding:7px 10px;
+  background:var(--surface); border-bottom:1px solid var(--border); flex-shrink:0;
+  flex-wrap:wrap; row-gap:6px;
+}
+.vtab {
+  padding:5px 13px; border-radius:20px; border:1px solid transparent;
+  background:transparent; color:var(--muted); font-size:11px; font-weight:600;
+  cursor:pointer; transition:all 0.15s; white-space:nowrap; display:flex; align-items:center; gap:5px;
+}
+.vtab:hover { color:var(--text); background:rgba(255,255,255,0.04); }
+.vtab.active { background:rgba(79,142,247,0.12); border-color:rgba(79,142,247,0.25); color:var(--accent); }
+.vtab-sep { width:1px; height:18px; background:var(--border); margin:0 4px; }
+.vtab-spacer { flex:1; }
+.vtab-tool {
+  width:30px; height:30px; border-radius:var(--radius-xs);
+  border:1px solid var(--border); background:var(--card);
+  color:var(--muted); font-size:14px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:all 0.15s;
+  flex-shrink:0;
+}
+.vtab-tool:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-glow); }
+.vtab-tool.active { border-color:var(--accent); color:var(--accent); background:rgba(79,142,247,0.1); }
+
+/* Viewer panel */
+.viewer-panel { position:relative; background:var(--viewer-bg); overflow:hidden; flex:1; min-height:0; transition:background 0.25s; }
+#canvas3d { width:100%; height:100%; display:block; }
+
+/* ── Compare overlay ── */
+.compare-overlay {
+  position:absolute; inset:0; pointer-events:none; display:none; z-index:6;
+}
+.compare-overlay.active { display:block; }
+.compare-divider {
+  position:absolute; top:0; bottom:0; left:50%;
+  transform:translateX(-50%);
+  display:flex; align-items:center; justify-content:center;
+  pointer-events:none; width:3px;
+}
+.compare-line {
+  position:absolute; top:0; bottom:0; left:50%; transform:translateX(-50%);
+  width:2px;
+  background:linear-gradient(to bottom,
+    transparent 0%,
+    rgba(255,255,255,0.6) 15%,
+    rgba(255,255,255,0.9) 45%,
+    rgba(255,255,255,0.9) 55%,
+    rgba(255,255,255,0.6) 85%,
+    transparent 100%
+  );
+  box-shadow:0 0 12px rgba(255,255,255,0.3), 0 0 28px rgba(79,142,247,0.35);
+}
+.compare-handle {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:42px; height:42px; border-radius:50%;
+  background:white;
+  box-shadow:0 4px 20px rgba(0,0,0,0.6), 0 0 0 3px rgba(79,142,247,0.4), 0 0 20px rgba(79,142,247,0.2);
+  display:flex; align-items:center; justify-content:center;
+  pointer-events:all; cursor:ew-resize; user-select:none; z-index:2;
+  transition:transform 0.15s, box-shadow 0.15s;
+}
+.compare-handle:hover {
+  transform:translate(-50%,-50%) scale(1.08);
+  box-shadow:0 6px 28px rgba(0,0,0,0.7), 0 0 0 4px rgba(79,142,247,0.6);
+}
+.compare-handle svg { pointer-events:none; }
+.compare-badge {
+  position:absolute; top:14px; padding:4px 11px;
+  border-radius:20px; font-size:10px; font-weight:800;
+  letter-spacing:0.1em; text-transform:uppercase; pointer-events:none;
+  backdrop-filter:blur(8px);
+}
+.badge-before { left:14px; background:rgba(255,153,68,0.88); color:#1a0800; }
+.badge-after  { right:14px; background:rgba(79,142,247,0.88); color:#fff; }
+
+/* Compare loading */
+.compare-loading {
+  position:absolute; inset:0; display:none;
+  flex-direction:column; align-items:center; justify-content:center; gap:12px;
+  background:rgba(8,10,15,0.75); backdrop-filter:blur(6px);
+  font-size:13px; color:var(--muted); z-index:20;
+}
+.compare-loading.show { display:flex; }
+.spinner-sm {
+  width:28px; height:28px; border:2px solid var(--border);
+  border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite;
+}
+
+/* Viewer controls */
 .viewer-label {
-  position: absolute; top: 12px; left: 16px; font-size: 11px; color: var(--muted);
-  background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
-  padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
+  position:absolute; top:12px; left:14px; font-size:10px; color:var(--muted);
+  background:rgba(0,0,0,0.55); backdrop-filter:blur(6px);
+  padding:4px 9px; border-radius:6px; border:1px solid rgba(255,255,255,0.07);
+}
+.viewer-controls { display:flex; align-items:center; gap:3px; }
+.viewer-btn {
+  padding:5px 11px; border-radius:20px; border:1px solid transparent;
+  background:transparent; color:var(--muted); font-size:11px; font-weight:600;
+  cursor:pointer; transition:all 0.15s; white-space:nowrap;
+}
+.viewer-btn:hover { color:var(--text); background:rgba(127,131,150,0.14); }
+.viewer-btn.active { background:var(--accent); color:#fff; }
+
+/* ══════════════════════════════════════════
+   LIGHTING PANEL
+══════════════════════════════════════════ */
+.lighting-panel {
+  position:absolute; top:12px; right:12px;
+  background:rgba(8,10,16,0.88); backdrop-filter:blur(14px);
+  border:1px solid var(--border2); border-radius:var(--radius);
+  padding:12px 13px; width:205px; z-index:10;
+  display:flex; flex-direction:column; gap:9px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.6);
+}
+.lp-title {
+  font-size:9px; font-weight:800; letter-spacing:0.12em; text-transform:uppercase;
+  color:var(--muted); display:flex; align-items:center; justify-content:space-between;
+}
+.lp-collapse-btn {
+  background:none; border:none; color:var(--muted); cursor:pointer;
+  font-size:10px; padding:0; line-height:1; transition:color 0.15s;
+}
+.lp-collapse-btn:hover { color:var(--text); }
+.lp-body { display:flex; flex-direction:column; gap:8px; }
+.lp-body.collapsed { display:none; }
+.lp-row { display:flex; flex-direction:column; gap:4px; }
+.lp-row-label {
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:10px; color:var(--muted);
+}
+.lp-row-label span { color:var(--accent); font-weight:700; font-size:10px; }
+.lp-row input[type=range] { width:100%; accent-color:var(--accent); height:3px; cursor:pointer; }
+.env-presets { display:grid; grid-template-columns:repeat(2,1fr); gap:3px; }
+.env-btn {
+  padding:5px 3px; border-radius:5px; border:1px solid var(--border);
+  background:var(--card); color:var(--muted); font-size:10px; font-weight:600;
+  cursor:pointer; text-align:center; transition:all 0.15s; line-height:1.4;
+}
+.env-btn:hover { border-color:var(--accent); color:var(--accent); }
+.env-btn.active { border-color:var(--accent); background:rgba(79,142,247,0.15); color:var(--accent); }
+.sky-color-row { display:flex; align-items:center; gap:7px; font-size:10px; color:var(--muted); }
+.sky-color-row input[type=color] {
+  width:26px; height:20px; border:1px solid var(--border); border-radius:4px;
+  background:none; cursor:pointer; padding:1px;
 }
 
 /* ══════════════════════════════════════════
-   NEW: Floating Lighting Panel
+   DETAIL PANEL
 ══════════════════════════════════════════ */
-.lighting-panel {
-  position: absolute; top: 12px; right: 12px;
-  background: rgba(10,12,18,0.88);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  width: 210px;
-  z-index: 10;
-  display: flex; flex-direction: column; gap: 10px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-}
-.lp-title {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--muted); display: flex; align-items: center; justify-content: space-between;
-}
-.lp-collapse-btn {
-  background: none; border: none; color: var(--muted); cursor: pointer;
-  font-size: 11px; padding: 0 2px; line-height: 1; transition: color 0.15s;
-}
-.lp-collapse-btn:hover { color: var(--text); }
-
-.lp-body { display: flex; flex-direction: column; gap: 9px; }
-.lp-body.collapsed { display: none; }
-
-.lp-row { display: flex; flex-direction: column; gap: 4px; }
-.lp-row-label {
-  display: flex; justify-content: space-between; align-items: center;
-  font-size: 11px; color: var(--muted);
-}
-.lp-row-label span { color: var(--accent); font-weight: 600; font-size: 11px; }
-.lp-row input[type=range] { width: 100%; accent-color: var(--accent); height: 3px; cursor: pointer; }
-
-/* Env preset chips */
-.env-presets { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
-.env-btn {
-  padding: 5px 4px; border-radius: 6px; border: 1px solid var(--border);
-  background: var(--card); color: var(--muted); font-size: 10px; font-weight: 500;
-  cursor: pointer; text-align: center; transition: all 0.15s; line-height: 1.4;
-}
-.env-btn:hover { border-color: var(--accent); color: var(--accent); }
-.env-btn.active { border-color: var(--accent); background: rgba(79,142,247,0.15); color: var(--accent); }
-
-/* Sky color row */
-.sky-color-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
-.sky-color-row input[type=color] {
-  width: 28px; height: 22px; border: 1px solid var(--border);
-  border-radius: 4px; background: none; cursor: pointer; padding: 1px;
-}
-
-/* ── Detail panel ── */
 .detail-panel {
-  background: var(--surface); border-left: 1px solid var(--border);
-  overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px;
+  background:var(--surface); border-left:1px solid var(--border);
+  overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:12px;
 }
+.detail-section { display:flex; flex-direction:column; gap:0; }
 .detail-section h4 {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+  font-size:9px; font-weight:800; letter-spacing:0.12em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:8px; padding-bottom:6px;
+  border-bottom:1px solid var(--border);
 }
 .compare-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 12px;
+  display:flex; justify-content:space-between; align-items:center;
+  padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.03); font-size:11px;
 }
-.compare-row:last-child { border-bottom: none; }
-.compare-row .key { color: var(--muted); }
-.compare-row .vals { display: flex; gap: 8px; align-items: center; }
-.compare-row .before-val { color: var(--muted); text-decoration: line-through; font-size: 11px; }
-.compare-row .after-val  { color: var(--text); font-weight: 500; }
+.compare-row:last-child { border-bottom:none; }
+.compare-row .key { color:var(--muted); }
+.compare-row .vals { display:flex; gap:6px; align-items:center; }
+.compare-row .before-val { color:var(--muted); text-decoration:line-through; font-size:10px; }
+.compare-row .after-val  { color:var(--text); font-weight:600; font-size:11px; }
 .compare-row .saved-tag  {
-  font-size: 10px; padding: 1px 5px; border-radius: 4px;
-  background: rgba(45,202,115,0.15); color: var(--green);
+  font-size:9px; padding:2px 5px; border-radius:4px;
+  background:rgba(45,202,115,0.12); color:var(--green); font-weight:700;
 }
-.log-list { display: flex; flex-direction: column; gap: 4px; }
+
+/* Polygon budget */
+.budget-wrap { padding:4px 0 2px; }
+.budget-header { display:flex; justify-content:space-between; font-size:11px; margin-bottom:5px; }
+.budget-header .key { color:var(--muted); }
+.budget-header .val-budget { font-weight:700; }
+.budget-track { height:5px; background:var(--border); border-radius:3px; overflow:hidden; margin-bottom:4px; }
+.budget-fill { height:100%; border-radius:3px; transition:width 1.2s cubic-bezier(0.22,1,0.36,1); }
+.budget-fill.green  { background:linear-gradient(90deg,var(--green),#3defaa); }
+.budget-fill.yellow { background:linear-gradient(90deg,var(--yellow),#f7cc6a); }
+.budget-fill.red    { background:linear-gradient(90deg,var(--red),#fa8080); }
+.budget-category { font-size:9px; color:var(--muted); }
+
+/* UE5 checks */
+.ue5-checks { display:flex; flex-direction:column; gap:3px; margin-top:6px; }
+.ue5-check {
+  display:flex; align-items:center; gap:7px; font-size:10px; color:var(--muted);
+  padding:4px 7px; border-radius:5px; background:var(--card);
+}
+.ue5-check .check-icon { font-size:11px; flex-shrink:0; }
+
+/* Texture breakdown */
+.tex-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.03); font-size:11px;
+}
+.tex-row:last-child { border-bottom:none; }
+.tex-name { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:110px; }
+.tex-info { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+.format-tag {
+  font-size:9px; font-weight:700; padding:1px 5px; border-radius:3px; letter-spacing:0.04em;
+}
+.format-tag.png { background:rgba(45,202,115,0.15); color:var(--green); }
+.format-tag.jpg { background:rgba(245,166,35,0.15); color:var(--yellow); }
+.format-tag.other { background:rgba(90,99,128,0.15); color:var(--muted); }
+.arrow-tag { font-size:10px; color:var(--muted); }
+.tex-size { color:var(--accent); font-size:10px; font-weight:600; }
+
+/* Log */
+.log-list { display:flex; flex-direction:column; gap:4px; }
 .log-item {
-  font-size: 11px; color: var(--muted); padding: 6px 8px;
-  background: var(--card); border-radius: 5px; line-height: 1.4;
-  border-left: 2px solid var(--accent);
+  font-size:10px; color:var(--muted); padding:6px 9px;
+  background:var(--card); border-radius:5px; line-height:1.5;
+  border-left:2px solid var(--accent); display:flex; align-items:flex-start; gap:6px;
 }
+.log-item::before { content:'✓'; color:var(--green); font-weight:700; flex-shrink:0; margin-top:0; }
+
+/* Download btn */
 .download-btn {
-  width: 100%; padding: 11px; border-radius: var(--radius-sm); border: none;
-  background: var(--green); color: #fff; font-size: 13px; font-weight: 600;
-  cursor: pointer; transition: opacity 0.15s; margin-top: auto;
+  width:100%; padding:11px; border-radius:var(--radius-sm); border:none;
+  background:linear-gradient(135deg, var(--green), #25b565);
+  color:#fff; font-size:12px; font-weight:700; cursor:pointer;
+  transition:all 0.15s; margin-top:auto;
+  box-shadow:0 4px 16px rgba(45,202,115,0.25);
+  display:flex; align-items:center; justify-content:center; gap:7px;
 }
-.download-btn:hover { opacity: 0.85; }
+.download-btn:hover { opacity:0.88; transform:translateY(-1px); box-shadow:0 6px 20px rgba(45,202,115,0.35); }
 
-/* ── Error state ── */
-.error-msg {
-  display: none; flex-direction: column; align-items: center; justify-content: center;
-  flex: 1; gap: 12px; color: var(--red); padding: 40px; text-align: center;
+/* ══════════════════════════════════════════
+   PREMIUM POLISH
+══════════════════════════════════════════ */
+/* Soft ambient glow behind the whole app */
+body {
+  background:
+    radial-gradient(1100px 560px at 8% -8%,  rgba(79,142,247,0.12), transparent 60%),
+    radial-gradient(900px 480px at 100% -5%, rgba(124,90,247,0.10), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
 }
-.error-msg.show { display: flex; }
-.error-msg h3 { font-size: 16px; }
-.error-msg p  { font-size: 13px; color: var(--muted); }
+:root[data-theme="light"] body {
+  background:
+    radial-gradient(1100px 560px at 8% -8%,  rgba(79,142,247,0.08), transparent 60%),
+    radial-gradient(900px 480px at 100% -5%, rgba(124,90,247,0.06), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
+}
 
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+/* Depth on the chrome */
+header { box-shadow: 0 1px 0 rgba(255,255,255,0.02), 0 6px 24px rgba(0,0,0,0.22); }
+:root[data-theme="light"] header { box-shadow: 0 1px 0 rgba(0,0,0,0.02), 0 4px 18px rgba(20,30,60,0.06); }
+
+.options-card, .upload-zone { box-shadow: 0 2px 12px rgba(0,0,0,0.20); }
+:root[data-theme="light"] .options-card,
+:root[data-theme="light"] .upload-zone { box-shadow: 0 2px 12px rgba(20,30,60,0.05); }
+
+/* Consistent, springy transitions across interactive chrome */
+.preset-btn, .select-btn, .env-btn, .vtab, .vtab-tool, .viewer-btn,
+.lang-btn, .theme-toggle, .option-row, .upload-zone, .download-btn, .compress-btn {
+  transition: all 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Accessible keyboard focus rings */
+button:focus-visible, input:focus-visible, .upload-zone:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Results panel gently fades in */
+@keyframes resultFade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+.results.show { animation: resultFade 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Stat cells respond to hover */
+.stat-cell { transition: background 0.18s; }
+.stat-cell:hover { background: var(--card); }
+
+/* Logo lifts subtly with the header */
+.logo { transition: transform 0.25s, box-shadow 0.25s; }
+header:hover .logo { transform: translateY(-1px); box-shadow: 0 0 22px rgba(79,142,247,0.5); }
+
+/* Crisper toggle knob */
+.toggle::after { box-shadow: 0 1px 3px rgba(0,0,0,0.35); }
+
+/* Smooth panel scrolling */
+aside, .detail-panel { scroll-behavior: smooth; }
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ══════════════════════════════════════════
+   OBJECT INSPECTOR (viewport overlays)
+══════════════════════════════════════════ */
+.viewer-panel.inspect-hovering { cursor: pointer; }
+
+.inspect-card {
+  position: absolute; z-index: 14; display: none;
+  min-width: 192px; max-width: 244px;
+  background: rgba(11,15,23,0.93); backdrop-filter: blur(14px);
+  border: 1px solid var(--border2); border-radius: 12px;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.55), 0 0 0 1px rgba(79,142,247,0.28);
+  color: #e8edf6; overflow: hidden;
+  animation: inspectPop 0.16s cubic-bezier(0.22,1,0.36,1);
+}
+@keyframes inspectPop { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+.inspect-head {
+  display: flex; align-items: center; gap: 8px; padding: 9px 12px;
+  background: rgba(79,142,247,0.12); border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.inspect-name { flex: 1; font-size: 12px; font-weight: 700; letter-spacing: -0.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inspect-close {
+  flex-shrink: 0; background: none; border: none; color: #9fb0cf;
+  font-size: 12px; line-height: 1; cursor: pointer; padding: 3px; border-radius: 5px;
+}
+.inspect-close:hover { color: #fff; background: rgba(255,255,255,0.12); }
+.inspect-body { padding: 9px 12px; display: flex; flex-direction: column; gap: 6px; }
+.inspect-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.inspect-row > span { font-size: 11px; color: #93a0bb; }
+.inspect-row > b {
+  font-size: 11.5px; font-weight: 700; color: #e8edf6;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.inspect-row > b.warn { color: var(--yellow); }
+.inspect-row > b.crit { color: var(--red); }
+
+.inspect-tag {
+  position: absolute; z-index: 15; display: none; pointer-events: none;
+  background: rgba(11,15,23,0.92); backdrop-filter: blur(8px);
+  border: 1px solid var(--border2); border-radius: 7px; padding: 5px 9px;
+  font-size: 11px; color: #cdd6e6; white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+.inspect-tag b { color: #fff; font-weight: 700; }
+
+.inspect-hint {
+  position: absolute; left: 14px; bottom: 14px; z-index: 9; display: none;
+  pointer-events: none; font-size: 11px; color: #aeb9cd;
+  background: rgba(11,15,23,0.7); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 5px 13px;
+}
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">⚡</div>
-  <div>
-    <h1>GLB Optimizer</h1>
-    <p>Compress 3D models for Unreal Engine 5</p>
+  <div class="header-text">
+    <h1 data-i18n="appTitle">GLB Optimizer</h1>
+    <p data-i18n="appSubtitle">Professional 3D compression for Unreal Engine 5</p>
   </div>
-  <div class="status-badge">● Server running</div>
+  <div class="lang-toggle">
+    <button class="lang-btn active" id="btn-en" onclick="setLang('en')">EN</button>
+    <button class="lang-btn"        id="btn-ja" onclick="setLang('ja')">日本語</button>
+  </div>
+  <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark / light mode" aria-label="Toggle theme">🌙</button>
+  <div class="status-badge"><div class="status-dot"></div><span data-i18n="serverRunning">Server running</span></div>
 </header>
 
 <main>
-  <aside>
-    <div>
-      <div class="section-label">Quick Presets</div>
-      <div class="preset-row">
-        <button class="preset-btn" onclick="applyPreset('quality')">🟢 Max Quality</button>
-        <button class="preset-btn" onclick="applyPreset('balanced')">🟡 Balanced</button>
-        <button class="preset-btn" onclick="applyPreset('small')">🔴 Max Small</button>
-      </div>
-      <div class="preset-hint" id="presetHint">Choose a preset or configure manually below</div>
+<!-- ══ SIDEBAR ══ -->
+<aside>
+
+  <div>
+    <div class="section-label" data-i18n="quickPresets">Quick Presets</div>
+    <div class="preset-row">
+      <button class="preset-btn" onclick="applyPreset('quality')"  data-i18n="presetQuality">🟢 Max Quality</button>
+      <button class="preset-btn" onclick="applyPreset('balanced')" data-i18n="presetBalanced">🟡 Balanced</button>
+      <button class="preset-btn" onclick="applyPreset('small')"    data-i18n="presetSmall">🔴 Max Small</button>
     </div>
+    <div class="preset-hint" id="presetHint" data-i18n="presetHint">Choose a preset or configure manually</div>
+  </div>
 
-    <div>
-      <div class="section-label">1. Upload Model</div>
-      <div class="upload-zone" id="uploadZone">
-        <input type="file" id="fileInput" accept=".glb">
-        <span class="upload-icon">📦</span>
-        <h3>Drop your GLB file here</h3>
-        <p>or click to browse</p>
-        <div class="file-chosen" id="fileChosen"></div>
-      </div>
+  <div>
+    <div class="section-label" data-i18n="uploadLabel">1 · Upload Model</div>
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" accept=".glb">
+      <span class="upload-icon">📦</span>
+      <h3 data-i18n="uploadTitle">Drop your GLB file here</h3>
+      <p data-i18n="uploadSub">or click to browse</p>
+      <div class="file-chosen" id="fileChosen"></div>
     </div>
+  </div>
 
-    <div>
-      <div class="section-label">2. Compression Options</div>
-      <div class="png-badge">🖼 PNG-only mode — all textures output as lossless PNG</div>
-      <div class="options-card">
-        <div class="option-row" onclick="toggleOpt('simplify')">
-          <div class="toggle on" id="tog-simplify"></div>
-          <div class="option-text">
-            <strong>Mesh Simplification</strong>
-            <span>Reduce polygon &amp; vertex count.</span>
-          </div>
-        </div>
-        <div class="sub-options visible" id="sub-simplify">
-          <div>
-            <div class="sub-label">Keep how many vertices</div>
-            <div class="slider-row">
-              <input type="range" id="simplifyRatio" min="10" max="90" value="50"
-                oninput="document.getElementById('ratioVal').textContent=this.value+'%'">
-              <span class="slider-val" id="ratioVal">50%</span>
-            </div>
-            <div class="sub-label" style="margin-top:4px">Lower = smaller file, less detail</div>
-          </div>
-        </div>
+  <div>
+    <div class="section-label" data-i18n="optionsLabel">2 · Compression Options</div>
+    <div class="png-badge" data-i18n="pngBadge">🖼 All textures always output as lossless PNG</div>
+    <div class="options-card">
 
-        <div class="option-row" onclick="toggleOpt('texCompress')">
-          <div class="toggle on" id="tog-texCompress"></div>
-          <div class="option-text">
-            <strong>Texture Compression</strong>
-            <span>Re-compress all textures as PNG (lossless).</span>
-          </div>
-        </div>
-
-        <div class="option-row" onclick="toggleOpt('texResize')">
-          <div class="toggle on" id="tog-texResize"></div>
-          <div class="option-text">
-            <strong>Texture Resize</strong>
-            <span>Cap texture resolution. <strong style="color:var(--green)">Biggest PNG size win.</strong></span>
-          </div>
-        </div>
-        <div class="sub-options visible" id="sub-texResize">
-          <div>
-            <div class="sub-label">Maximum texture size</div>
-            <div class="select-row">
-              <div class="select-btn" data-val="4K" onclick="selectSize(this,'4K')">4K (keep)</div>
-              <div class="select-btn active" data-val="2K" onclick="selectSize(this,'2K')">2K ★</div>
-              <div class="select-btn" data-val="1K" onclick="selectSize(this,'1K')">1K</div>
-              <div class="select-btn" data-val="512" onclick="selectSize(this,'512')">512px</div>
-            </div>
-            <div class="sub-label" style="margin-top:6px;color:var(--yellow)">★ 2K = best quality/size balance for UE5</div>
-          </div>
-        </div>
-
-        <div class="option-row" onclick="toggleOpt('resample')">
-          <div class="toggle on" id="tog-resample"></div>
-          <div class="option-text">
-            <strong>Animation Resample</strong>
-            <span>Losslessly reduce animation keyframe data.</span>
-          </div>
-        </div>
-
-        <div class="option-row" onclick="toggleOpt('cleanup')">
-          <div class="toggle on" id="tog-cleanup"></div>
-          <div class="option-text">
-            <strong>Remove Unused Data</strong>
-            <span>Delete duplicate geometry, unused nodes.</span>
-          </div>
+      <div class="option-row" onclick="toggleOpt('simplify')">
+        <div class="toggle on" id="tog-simplify"></div>
+        <div class="option-text">
+          <strong data-i18n="optSimplifyTitle">Mesh Simplification</strong>
+          <span data-i18n="optSimplifyDesc">Reduce polygon &amp; vertex count for biggest geometry savings.</span>
         </div>
       </div>
+      <div class="sub-options visible" id="sub-simplify">
+        <div>
+          <div class="sub-label" data-i18n="simplifySliderLabel">Vertices to keep</div>
+          <div class="slider-row">
+            <input type="range" id="simplifyRatio" min="10" max="90" value="50"
+              oninput="document.getElementById('ratioVal').textContent=this.value+'%'">
+            <span class="slider-val" id="ratioVal">50%</span>
+          </div>
+          <div class="sub-label" style="margin-top:3px" data-i18n="simplifySliderHint">Lower = smaller file, less geometry detail</div>
+        </div>
+      </div>
+
+      <div class="option-row" onclick="toggleOpt('texCompress')">
+        <div class="toggle on" id="tog-texCompress"></div>
+        <div class="option-text">
+          <strong data-i18n="optTexTitle">Texture Compression</strong>
+          <span data-i18n="optTexDesc">Re-encode all textures as optimised PNG — maximum UE5 compatibility.</span>
+        </div>
+      </div>
+
+      <div class="option-row" onclick="toggleOpt('texResize')">
+        <div class="toggle on" id="tog-texResize"></div>
+        <div class="option-text">
+          <strong data-i18n="optResizeTitle">Texture Resize</strong>
+          <span data-i18n="optResizeDesc">Cap resolution. 4K→2K alone saves <strong style="color:var(--green)">~83%</strong> texture size.</span>
+        </div>
+      </div>
+      <div class="sub-options visible" id="sub-texResize">
+        <div>
+          <div class="sub-label" data-i18n="resizeSliderLabel">Maximum texture size</div>
+          <div class="select-row">
+            <div class="select-btn" data-val="4K" onclick="selectSize(this,'4K')">4K</div>
+            <div class="select-btn active" data-val="2K" onclick="selectSize(this,'2K')">2K ★</div>
+            <div class="select-btn" data-val="1K" onclick="selectSize(this,'1K')">1K</div>
+            <div class="select-btn" data-val="512" onclick="selectSize(this,'512')">512</div>
+          </div>
+          <div class="sub-label" style="margin-top:5px;color:var(--yellow)" data-i18n="resizeHint">★ 2K = ideal quality/size ratio for UE5</div>
+        </div>
+      </div>
+
+      <div class="option-row" onclick="toggleOpt('resample')">
+        <div class="toggle on" id="tog-resample"></div>
+        <div class="option-text">
+          <strong data-i18n="optAnimTitle">Animation Resample</strong>
+          <span data-i18n="optAnimDesc">Losslessly compact keyframe data. Safe for all rigs.</span>
+        </div>
+      </div>
+
+      <div class="option-row" onclick="toggleOpt('cleanup')">
+        <div class="toggle on" id="tog-cleanup"></div>
+        <div class="option-text">
+          <strong data-i18n="optCleanTitle">Remove Unused Data</strong>
+          <span data-i18n="optCleanDesc">Purge duplicate geometry, empty nodes, redundant materials.</span>
+        </div>
+      </div>
+
     </div>
+  </div>
 
-    <button class="compress-btn" id="compressBtn" onclick="startCompress()" disabled>
-      ⚡ Optimize Model
-    </button>
-  </aside>
+  <button class="compress-btn" id="compressBtn" onclick="startCompress()" disabled data-i18n="compressBtn">
+    ⚡ Optimize Model
+  </button>
 
-  <div class="content">
+</aside>
 
-    <div class="welcome" id="welcomeState">
-      <div class="welcome-icon">🎮</div>
-      <h2>Upload a GLB to get started</h2>
-      <p>Choose your compression settings on the left, upload your model, and hit Optimize. You'll see a full 3D preview with before/after stats.</p>
+<!-- ══ CONTENT ══ -->
+<div class="content">
+
+  <!-- Welcome -->
+  <div class="welcome" id="welcomeState">
+    <div class="welcome-icon">🎮</div>
+    <h2 data-i18n="welcomeTitle">Upload a GLB to get started</h2>
+    <p data-i18n="welcomeDesc">Configure compression options on the left, upload your model, and hit Optimize. Get a live 3D preview with before/after comparison slider and mesh density analysis.</p>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progressState">
+    <div class="spinner"></div>
+    <div class="progress-label" data-i18n="progressLabel">Optimizing your model…</div>
+    <div class="progress-steps">
+      <div class="step-item" id="step1"><div class="step-dot"></div><span data-i18n="step1">Reading file</span></div>
+      <div class="step-item" id="step2"><div class="step-dot"></div><span data-i18n="step2">Simplifying mesh</span></div>
+      <div class="step-item" id="step3"><div class="step-dot"></div><span data-i18n="step3">Converting textures to PNG</span></div>
+      <div class="step-item" id="step4"><div class="step-dot"></div><span data-i18n="step4">Cleaning up &amp; writing output</span></div>
     </div>
+  </div>
 
-    <div class="progress-wrap" id="progressState">
-      <div class="spinner"></div>
-      <div class="progress-label" id="progressLabel">Processing your model…</div>
-      <div class="progress-steps">
-        <div class="step-item" id="step1"><div class="step-dot"></div>Reading file</div>
-        <div class="step-item" id="step2"><div class="step-dot"></div>Simplifying mesh</div>
-        <div class="step-item" id="step3"><div class="step-dot"></div>Compressing textures</div>
-        <div class="step-item" id="step4"><div class="step-dot"></div>Cleaning up &amp; writing</div>
+  <!-- Error -->
+  <div class="error-msg" id="errorState">
+    <div style="font-size:40px">⚠️</div>
+    <h3 data-i18n="errorTitle">Optimization failed</h3>
+    <p id="errorText"></p>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="resultsState">
+
+    <!-- Stats bar -->
+    <div class="stats-bar">
+      <div class="stat-cell">
+        <div class="val" id="stat-before">—</div>
+        <div class="stat-mini-bar"><div class="stat-mini-fill" id="bar-before"></div></div>
+        <div class="lbl" data-i18n="statBefore">Original Size</div>
+      </div>
+      <div class="stat-cell">
+        <div class="val green" id="stat-after">—</div>
+        <div class="stat-mini-bar"><div class="stat-mini-fill green" id="bar-after"></div></div>
+        <div class="lbl" data-i18n="statAfter">Optimized Size</div>
+      </div>
+      <div class="stat-cell">
+        <div class="val green" id="stat-saved">—</div>
+        <div class="stat-mini-bar"><div class="stat-mini-fill" id="bar-saved"></div></div>
+        <div class="lbl" data-i18n="statSaved">Size Saved</div>
+      </div>
+      <div class="stat-cell">
+        <div class="val" id="stat-verts">—</div>
+        <div class="stat-mini-bar"><div class="stat-mini-fill" id="bar-verts"></div></div>
+        <div class="lbl" data-i18n="statVerts">Vertices Cut</div>
       </div>
     </div>
 
-    <div class="error-msg" id="errorState">
-      <div style="font-size:36px">⚠️</div>
-      <h3>Compression failed</h3>
-      <p id="errorText"></p>
+    <!-- Insight bar -->
+    <div class="insight-bar">
+      <div class="insight-item">⏱ <strong id="insight-time">—</strong></div>
+      <div class="insight-item">🖼 <strong id="insight-tex">—</strong></div>
+      <div class="insight-item">📐 <strong id="insight-budget">—</strong></div>
+      <div class="insight-item">🎬 <strong id="insight-anims">—</strong></div>
+      <button class="insight-copy" id="copyBtn" onclick="copyStats()" data-i18n="copyReport">📋 Copy Report</button>
     </div>
 
-    <div class="results" id="resultsState">
-      <div class="stats-bar">
-        <div class="stat-cell"><div class="val" id="stat-before">—</div><div class="lbl">Before</div></div>
-        <div class="stat-cell"><div class="val green" id="stat-after">—</div><div class="lbl">After</div></div>
-        <div class="stat-cell"><div class="val green" id="stat-saved">—</div><div class="lbl">Saved</div></div>
-        <div class="stat-cell"><div class="val" id="stat-verts">—</div><div class="lbl">Vertices</div></div>
-      </div>
+    <!-- Viewer -->
+    <div class="viewer-wrap">
+      <div class="viewer-column">
 
-      <div class="viewer-wrap">
-        <!-- 3D Viewer -->
+        <!-- Mode tabs -->
+        <div class="viewer-tab-bar">
+          <button class="vtab active" id="vtab-preview" onclick="setMode('preview')" data-i18n="tabPreview">👁 Preview</button>
+          <button class="vtab" id="vtab-inspect" onclick="setMode('inspect')" data-i18n="tabInspect">🔍 Inspect</button>
+          <div class="vtab-sep"></div>
+          <button class="vtab" id="vtab-compare" onclick="setMode('compare')" data-i18n="tabCompare">◀▶ Compare</button>
+          <button class="vtab" id="vtab-mesh" onclick="setMode('mesh')" data-i18n="tabMesh">⬡ Mesh Density</button>
+          <div class="vtab-spacer"></div>
+          <div class="viewer-controls">
+            <button class="viewer-btn" onclick="resetCamera()" data-i18n="btnReset">Reset</button>
+            <button class="viewer-btn" id="wireframeBtn" onclick="toggleWireframe()" data-i18n="btnWireframe">Wireframe</button>
+            <button class="viewer-btn" id="rotateBtn" onclick="toggleAutoRotate()" data-i18n="btnRotate">Auto Rotate</button>
+          </div>
+          <div class="vtab-sep"></div>
+          <button class="vtab-tool" id="gridBtn" onclick="toggleGroundGrid()" title="Toggle ground grid">⊞</button>
+          <button class="vtab-tool" onclick="takeScreenshot()" title="Save screenshot as PNG">📷</button>
+        </div>
+
+        <!-- Canvas -->
         <div class="viewer-panel">
           <canvas id="canvas3d"></canvas>
 
-          <div class="viewer-label" id="viewerLabel">Compressed model</div>
+          <!-- Compare / Mesh overlay -->
+          <div class="compare-overlay" id="compareOverlay">
+            <div class="compare-divider" id="compareDivider">
+              <div class="compare-line"></div>
+              <div class="compare-handle" id="compareHandle">
+                <svg width="20" height="12" viewBox="0 0 20 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 6L1 1M6 6L1 11M14 6L19 1M14 6L19 11" stroke="#444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="1" y1="6" x2="19" y2="6" stroke="#ccc" stroke-width="1.2"/>
+                </svg>
+              </div>
+            </div>
+            <span class="compare-badge badge-before" id="badgeBefore" data-i18n="badgeOriginal">ORIGINAL</span>
+            <span class="compare-badge badge-after"  id="badgeAfter"  data-i18n="badgeOptimized">OPTIMIZED</span>
+          </div>
 
-          <!-- ══ LIGHTING PANEL ══ -->
+          <!-- Compare loading -->
+          <div class="compare-loading" id="compareLoading">
+            <div class="spinner-sm"></div>
+            <span data-i18n="compareLoading">Loading original model for comparison…</span>
+          </div>
+
+          <div class="viewer-label" id="viewerLabel" data-i18n="viewerLabel">Optimized model</div>
+
+          <!-- Object inspector: hover tag, pinned detail card, discovery hint -->
+          <div class="inspect-tag" id="inspectTag"></div>
+          <div class="inspect-card" id="inspectCard">
+            <div class="inspect-head">
+              <span class="inspect-name" id="inspectName"></span>
+              <button class="inspect-close" id="inspectClose" aria-label="Close">✕</button>
+            </div>
+            <div class="inspect-body" id="inspectBody"></div>
+          </div>
+          <div class="inspect-hint" id="inspectHint" data-i18n="inspectHint">Click an object to inspect</div>
+
+          <!-- Lighting panel -->
           <div class="lighting-panel">
             <div class="lp-title">
-              💡 Lighting
-              <button class="lp-collapse-btn" id="lpCollapseBtn" onclick="toggleLightingPanel()">▲</button>
+              💡 <span data-i18n="lightingTitle">Lighting</span>
+              <button class="lp-collapse-btn" id="lpBtn" onclick="toggleLightingPanel()">▲</button>
             </div>
             <div class="lp-body" id="lpBody">
-
-              <!-- Environment presets -->
               <div class="lp-row">
-                <div class="lp-row-label">Environment</div>
+                <div class="lp-row-label" data-i18n="envLabel">Environment</div>
                 <div class="env-presets">
-                  <button class="env-btn" data-preset="studio"  onclick="applyEnvPreset('studio')">🏢 Studio</button>
-                  <button class="env-btn active" data-preset="outdoor" onclick="applyEnvPreset('outdoor')">☀️ Outdoor</button>
-                  <button class="env-btn" data-preset="sunset"  onclick="applyEnvPreset('sunset')">🌇 Sunset</button>
-                  <button class="env-btn" data-preset="night"   onclick="applyEnvPreset('night')">🌙 Night</button>
+                  <button class="env-btn" data-preset="studio"  onclick="applyEnvPreset('studio')"  data-i18n="envStudio">🏢 Studio</button>
+                  <button class="env-btn active" data-preset="outdoor" onclick="applyEnvPreset('outdoor')" data-i18n="envOutdoor">☀️ Outdoor</button>
+                  <button class="env-btn" data-preset="sunset"  onclick="applyEnvPreset('sunset')"  data-i18n="envSunset">🌇 Sunset</button>
+                  <button class="env-btn" data-preset="night"   onclick="applyEnvPreset('night')"   data-i18n="envNight">🌙 Night</button>
                 </div>
               </div>
-
-              <!-- Sun intensity -->
               <div class="lp-row">
-                <div class="lp-row-label">Sun Intensity <span id="sunIntVal">1.8</span></div>
-                <div class="slider-row">
-                  <input type="range" id="sunIntSlider" min="0" max="5" step="0.1" value="1.8"
-                    oninput="onSunIntensity(this.value)">
-                </div>
+                <div class="lp-row-label"><span data-i18n="sunIntLabel">Sun Intensity</span> <span id="sunIntVal">1.8</span></div>
+                <div class="slider-row"><input type="range" id="sunIntSlider" min="0" max="5" step="0.1" value="1.8" oninput="onSunIntensity(this.value)"></div>
               </div>
-
-              <!-- Ambient -->
               <div class="lp-row">
-                <div class="lp-row-label">Ambient Light <span id="ambIntVal">0.60</span></div>
-                <div class="slider-row">
-                  <input type="range" id="ambIntSlider" min="0" max="3" step="0.05" value="0.6"
-                    oninput="onAmbientIntensity(this.value)">
-                </div>
+                <div class="lp-row-label"><span data-i18n="ambLabel">Ambient Light</span> <span id="ambIntVal">0.60</span></div>
+                <div class="slider-row"><input type="range" id="ambIntSlider" min="0" max="3" step="0.05" value="0.6" oninput="onAmbientIntensity(this.value)"></div>
               </div>
-
-              <!-- Sun azimuth -->
               <div class="lp-row">
-                <div class="lp-row-label">Sun Angle <span id="sunAngVal">45°</span></div>
-                <div class="slider-row">
-                  <input type="range" id="sunAngSlider" min="0" max="360" step="1" value="45"
-                    oninput="onSunAngle(this.value)">
-                </div>
+                <div class="lp-row-label"><span data-i18n="sunAngleLabel">Sun Angle</span> <span id="sunAngVal">45°</span></div>
+                <div class="slider-row"><input type="range" id="sunAngSlider" min="0" max="360" step="1" value="45" oninput="onSunAngle(this.value)"></div>
               </div>
-
-              <!-- Sun elevation -->
               <div class="lp-row">
-                <div class="lp-row-label">Sun Height <span id="sunHtVal">60°</span></div>
-                <div class="slider-row">
-                  <input type="range" id="sunHtSlider" min="5" max="90" step="1" value="60"
-                    oninput="onSunHeight(this.value)">
-                </div>
+                <div class="lp-row-label"><span data-i18n="sunHeightLabel">Sun Height</span> <span id="sunHtVal">60°</span></div>
+                <div class="slider-row"><input type="range" id="sunHtSlider" min="5" max="90" step="1" value="60" oninput="onSunHeight(this.value)"></div>
               </div>
-
-              <!-- Sky color -->
               <div class="lp-row">
                 <div class="sky-color-row">
-                  <span>Sky Color</span>
+                  <span data-i18n="skyColorLabel2">Sky Color</span>
                   <input type="color" id="skyColorPicker" value="#1a3060" oninput="onSkyColor(this.value)">
-                  <span style="font-size:10px;color:var(--muted)" id="skyColorLabel">#1a3060</span>
+                  <span id="skyColorLabel" style="font-size:10px;color:var(--muted)">#1a3060</span>
                 </div>
               </div>
-
-            </div>
-          </div>
-          <!-- end lighting panel -->
-
-          <div class="viewer-controls">
-            <button class="viewer-btn active" onclick="resetCamera()">Reset view</button>
-            <button class="viewer-btn" onclick="toggleWireframe()">Wireframe</button>
-            <button class="viewer-btn" onclick="toggleAutoRotate()">Auto rotate</button>
-          </div>
-        </div>
-
-        <!-- Detail panel -->
-        <div class="detail-panel">
-          <div class="detail-section">
-            <h4>Size Comparison</h4>
-            <div class="compare-row">
-              <span class="key">File size</span>
-              <div class="vals">
-                <span class="before-val" id="d-size-before"></span>
-                <span class="after-val"  id="d-size-after"></span>
-                <span class="saved-tag"  id="d-size-saved"></span>
-              </div>
-            </div>
-            <div class="compare-row">
-              <span class="key">Vertices</span>
-              <div class="vals">
-                <span class="before-val" id="d-verts-before"></span>
-                <span class="after-val"  id="d-verts-after"></span>
-              </div>
-            </div>
-            <div class="compare-row">
-              <span class="key">Triangles</span>
-              <div class="vals">
-                <span class="before-val" id="d-tris-before"></span>
-                <span class="after-val"  id="d-tris-after"></span>
-              </div>
-            </div>
-            <div class="compare-row">
-              <span class="key">Textures</span>
-              <div class="vals">
-                <span class="before-val" id="d-tex-before"></span>
-                <span class="after-val"  id="d-tex-after"></span>
-                <span class="saved-tag"  id="d-tex-saved"></span>
-              </div>
-            </div>
-            <div class="compare-row">
-              <span class="key">Animations</span>
-              <div class="vals"><span class="after-val" id="d-anims"></span></div>
             </div>
           </div>
 
-          <div class="detail-section">
-            <h4>Texture Breakdown</h4>
-            <div id="texBreakdown" style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted);"></div>
-          </div>
-
-          <div class="detail-section">
-            <h4>What was done</h4>
-            <div class="log-list" id="logList"></div>
-          </div>
-
-          <button class="download-btn" onclick="downloadResult()">⬇ Download Optimized GLB</button>
         </div>
       </div>
-    </div>
 
+      <!-- Detail panel -->
+      <div class="detail-panel">
+
+        <div class="detail-section">
+          <h4 data-i18n="sizeCompTitle">Size Comparison</h4>
+          <div class="compare-row"><span class="key" data-i18n="keyFileSize">File size</span>
+            <div class="vals">
+              <span class="before-val" id="d-size-before"></span>
+              <span class="after-val"  id="d-size-after"></span>
+              <span class="saved-tag"  id="d-size-saved"></span>
+            </div>
+          </div>
+          <div class="compare-row"><span class="key" data-i18n="keyVertices">Vertices</span>
+            <div class="vals">
+              <span class="before-val" id="d-verts-before"></span>
+              <span class="after-val"  id="d-verts-after"></span>
+            </div>
+          </div>
+          <div class="compare-row"><span class="key" data-i18n="keyTriangles">Triangles</span>
+            <div class="vals">
+              <span class="before-val" id="d-tris-before"></span>
+              <span class="after-val"  id="d-tris-after"></span>
+            </div>
+          </div>
+          <div class="compare-row"><span class="key" data-i18n="keyTextures">Textures</span>
+            <div class="vals">
+              <span class="before-val" id="d-tex-before"></span>
+              <span class="after-val"  id="d-tex-after"></span>
+              <span class="saved-tag"  id="d-tex-saved"></span>
+            </div>
+          </div>
+          <div class="compare-row"><span class="key" data-i18n="keyAnimations">Animations</span>
+            <div class="vals"><span class="after-val" id="d-anims"></span></div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h4 data-i18n="analysisTitle">UE5 Model Analysis</h4>
+          <div class="budget-wrap">
+            <div class="budget-header">
+              <span class="key" data-i18n="polyBudget">Polygon Budget</span>
+              <span class="val-budget" id="budgetLabel">—</span>
+            </div>
+            <div class="budget-track">
+              <div class="budget-fill" id="budgetFill" style="width:0%"></div>
+            </div>
+            <div class="budget-category" id="budgetCategory"></div>
+          </div>
+          <div class="ue5-checks" id="ue5Checks"></div>
+        </div>
+
+        <div class="detail-section">
+          <h4 data-i18n="texBreakTitle">Texture Breakdown</h4>
+          <div id="texBreakdown"></div>
+        </div>
+
+        <div class="detail-section">
+          <h4 data-i18n="logTitle">Optimization Log</h4>
+          <div class="log-list" id="logList"></div>
+        </div>
+
+        <button class="download-btn" onclick="downloadResult()" data-i18n="downloadBtn">⬇ Download Optimized GLB</button>
+
+      </div>
+    </div>
   </div>
+
+</div>
 </main>
 
 <script type="module">
@@ -613,17 +1033,502 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader }    from 'three/addons/loaders/GLTFLoader.js';
 
-// ── State ─────────────────────────────────────────────
-let selectedFile = null, resultFilename = null;
-let scene, camera, renderer, controls, model, animMixer, clock;
-let wireframeOn = false, autoRotate = false;
-let sunLight, ambientLight, fillLight, rimLight, hemiLight;
-let lpCollapsed = false;
+// ══════════════════════════════════════════
+// i18n — DUAL LANGUAGE SYSTEM (EN / JA)
+// ══════════════════════════════════════════
+const LANGS = {
+  en: {
+    // Header
+    appTitle:         'GLB Optimizer',
+    appSubtitle:      'Professional 3D compression for Unreal Engine 5',
+    serverRunning:    'Server running',
+    // Sidebar
+    quickPresets:     'Quick Presets',
+    presetQuality:    '🟢 Max Quality',
+    presetBalanced:   '🟡 Balanced',
+    presetSmall:      '🔴 Max Small',
+    presetHint:       'Choose a preset or configure manually',
+    uploadLabel:      '1 · Upload Model',
+    uploadTitle:      'Drop your GLB file here',
+    uploadSub:        'or click to browse',
+    optionsLabel:     '2 · Compression Options',
+    pngBadge:         '🖼 All textures always output as lossless PNG',
+    optSimplifyTitle: 'Mesh Simplification',
+    optSimplifyDesc:  'Reduce polygon & vertex count for biggest geometry savings.',
+    simplifySliderLabel: 'Vertices to keep',
+    simplifySliderHint:  'Lower = smaller file, less geometry detail',
+    optTexTitle:      'Texture Compression',
+    optTexDesc:       'Re-encode all textures as optimised PNG — maximum UE5 compatibility.',
+    optResizeTitle:   'Texture Resize',
+    optResizeDesc:    'Cap resolution. 4K→2K alone saves ~83% texture size.',
+    resizeSliderLabel:'Maximum texture size',
+    resizeHint:       '★ 2K = ideal quality/size ratio for UE5',
+    optAnimTitle:     'Animation Resample',
+    optAnimDesc:      'Losslessly compact keyframe data. Safe for all rigs.',
+    optCleanTitle:    'Remove Unused Data',
+    optCleanDesc:     'Purge duplicate geometry, empty nodes, redundant materials.',
+    compressBtn:      '⚡ Optimize Model',
+    // Welcome / progress / error
+    welcomeTitle:     'Upload a GLB to get started',
+    welcomeDesc:      'Configure compression options on the left, upload your model, and hit Optimize. Get a live 3D preview with before/after comparison slider and mesh density analysis.',
+    progressLabel:    'Optimizing your model…',
+    step1:            'Reading file',
+    step2:            'Simplifying mesh',
+    step3:            'Converting textures to PNG',
+    step4:            'Cleaning up & writing output',
+    errorTitle:       'Optimization failed',
+    // Stats bar
+    statBefore:       'Original Size',
+    statAfter:        'Optimized Size',
+    statSaved:        'Size Saved',
+    statVerts:        'Vertices Cut',
+    // Insight bar
+    copyReport:       '📋 Copy Report',
+    // Viewer tabs
+    tabPreview:       '👁 Preview',
+    tabInspect:       '🔍 Inspect',
+    tabCompare:       '◀▶ Compare',
+    tabMesh:          '⬡ Mesh Density',
+    // Viewer overlays
+    badgeOriginal:    'ORIGINAL',
+    badgeOptimized:   'OPTIMIZED',
+    badgeOriginalMesh:'ORIGINAL MESH',
+    badgeOptimizedMesh:'OPTIMIZED MESH',
+    compareLoading:   'Loading original model for comparison…',
+    viewerLabel:      'Optimized model',
+    viewerLabelDynamic: (n) => `Optimized · ${n} animation${n === 1 ? '' : 's'}`,
+    trisUnit:         'tris',
+    // Object inspector
+    inspectVertices:  'Vertices',
+    inspectTriangles: 'Triangles',
+    inspectShare:     'Share of scene',
+    inspectTexture:   'Texture',
+    inspectSize:      'Size',
+    inspectHeavy:     'heavy',
+    inspectNone:      'none',
+    inspectHint:      'Click an object to inspect',
+    // Lighting panel
+    lightingTitle:    'Lighting',
+    envLabel:         'Environment',
+    envStudio:        '🏢 Studio',
+    envOutdoor:       '☀️ Outdoor',
+    envSunset:        '🌇 Sunset',
+    envNight:         '🌙 Night',
+    sunIntLabel:      'Sun Intensity',
+    ambLabel:         'Ambient Light',
+    sunAngleLabel:    'Sun Angle',
+    sunHeightLabel:   'Sun Height',
+    skyColorLabel2:   'Sky Color',
+    // Viewer controls
+    btnReset:         'Reset',
+    btnWireframe:     'Wireframe',
+    btnRotate:        'Auto Rotate',
+    // Detail panel
+    sizeCompTitle:    'Size Comparison',
+    keyFileSize:      'File size',
+    keyVertices:      'Vertices',
+    keyTriangles:     'Triangles',
+    keyTextures:      'Textures',
+    keyAnimations:    'Animations',
+    analysisTitle:    'UE5 Model Analysis',
+    polyBudget:       'Polygon Budget',
+    texBreakTitle:    'Texture Breakdown',
+    logTitle:         'Optimization Log',
+    downloadBtn:      '⬇ Download Optimized GLB',
+    // Dynamic strings (used in JS)
+    noAnimations:     'None',
+    animCount:        (n) => `${n} animation(s)`,
+    texConvCount:     (n) => `${n} textures → PNG`,
+    noTextures:       'No textures in model',
+    copiedLabel:      '✓ Copied!',
+    // Preset hints (dynamic)
+    hintQuality:      'No mesh changes — textures converted & resized to 2K PNG',
+    hintBalanced:     '50% mesh reduction + 2K PNG textures',
+    hintSmall:        'Maximum compression — 25% mesh + 1K PNG textures',
+    // UE5 checks
+    check1:           'All textures converted to PNG',
+    check2:           'UE5-incompatible extensions stripped',
+    check3:           'Duplicate geometry removed',
+    check4:           'Polygon count within budget',
+    check5:           'File size under 50 MB',
+    // Budget categories
+    budgetIconProp:   'Icon Prop',
+    budgetSmall:      'Small Prop',
+    budgetMedium:     'Medium Prop',
+    budgetLarge:      'Large / Vehicle',
+    budgetHero:       'Hero Character',
+    budgetHeavy:      'Very Heavy (LOD0 only)',
+    // Copy report
+    reportHeader:     '=== GLB Optimizer Report ===',
+    reportTime:       (s) => `Processed in: ${s}s`,
+    reportOriginal:   'Original',
+    reportOptimized:  'Optimized',
+    reportSaved:      'Saved',
+    reportSteps:      '--- Steps ---',
+    // Server log lines (localized on the client by localizeLog())
+    logMesh:          (before, after, pct) => `Mesh: ${before} → ${after} vertices (${pct}% reduced)`,
+    logAnim:          'Animations: keyframes resampled losslessly',
+    logTextures:      (n, conv, saved, mb) => `Textures: ${n} texture(s) → all converted to PNG${conv ? ` (${conv} format-converted)` : ''} · ${saved ? 'saved' : 'added'} ${mb} MB`,
+    logCleanup:       'Cleanup: duplicates removed, scene flattened',
+  },
 
-const opts = { simplify: true, texCompress: true, texResize: true, resample: true, cleanup: true };
+  ja: {
+    // Header
+    appTitle:         'GLBオプティマイザー',
+    appSubtitle:      'Unreal Engine 5向けプロ3Dモデル圧縮ツール',
+    serverRunning:    'サーバー起動中',
+    // Sidebar
+    quickPresets:     'クイックプリセット',
+    presetQuality:    '🟢 最高品質',
+    presetBalanced:   '🟡 バランス',
+    presetSmall:      '🔴 最小サイズ',
+    presetHint:       'プリセットを選択するか手動で設定してください',
+    uploadLabel:      '1 · モデルをアップロード',
+    uploadTitle:      'GLBファイルをここにドロップ',
+    uploadSub:        'またはクリックして選択',
+    optionsLabel:     '2 · 圧縮オプション',
+    pngBadge:         '🖼 テクスチャは常にロスレスPNGで出力されます',
+    optSimplifyTitle: 'メッシュ簡略化',
+    optSimplifyDesc:  'ポリゴン数と頂点数を削減してファイルサイズを大幅に節約します。',
+    simplifySliderLabel: '残す頂点の割合',
+    simplifySliderHint:  '低いほどファイルが小さくなりますが、形状の精度が下がります',
+    optTexTitle:      'テクスチャ圧縮',
+    optTexDesc:       '全テクスチャをPNGに変換 — UE5との最大互換性を確保します。',
+    optResizeTitle:   'テクスチャリサイズ',
+    optResizeDesc:    '解像度を制限します。4K→2Kだけでテクスチャ容量を約83%削減できます。',
+    resizeSliderLabel:'テクスチャ最大サイズ',
+    resizeHint:       '★ 2K = UE5向けの最適な品質とサイズのバランス',
+    optAnimTitle:     'アニメーションリサンプル',
+    optAnimDesc:      'キーフレームデータをロスレスで圧縮します。すべてのリグで安全に使用できます。',
+    optCleanTitle:    '不要データを削除',
+    optCleanDesc:     '重複ジオメトリ・空のノード・未使用マテリアルを除去します。',
+    compressBtn:      '⚡ モデルを最適化',
+    // Welcome / progress / error
+    welcomeTitle:     'GLBファイルをアップロードして開始',
+    welcomeDesc:      '左側で圧縮オプションを設定し、モデルをアップロードして「最適化」を押してください。前後比較スライダーとメッシュ密度分析付きの3Dプレビューが表示されます。',
+    progressLabel:    'モデルを最適化中…',
+    step1:            'ファイルを読み込み中',
+    step2:            'メッシュを簡略化中',
+    step3:            'テクスチャをPNGに変換中',
+    step4:            'クリーンアップ・書き出し中',
+    errorTitle:       '最適化に失敗しました',
+    // Stats bar
+    statBefore:       '元のサイズ',
+    statAfter:        '最適化後サイズ',
+    statSaved:        '削減サイズ',
+    statVerts:        '削減頂点数',
+    // Insight bar
+    copyReport:       '📋 レポートをコピー',
+    // Viewer tabs
+    tabPreview:       '👁 プレビュー',
+    tabInspect:       '🔍 詳細',
+    tabCompare:       '◀▶ 比較',
+    tabMesh:          '⬡ メッシュ密度',
+    // Viewer overlays
+    badgeOriginal:    'オリジナル',
+    badgeOptimized:   '最適化後',
+    badgeOriginalMesh:'オリジナルメッシュ',
+    badgeOptimizedMesh:'最適化後メッシュ',
+    compareLoading:   '比較用オリジナルモデルを読み込み中…',
+    viewerLabel:      '最適化済みモデル',
+    viewerLabelDynamic: (n) => `最適化済み · ${n}個のアニメーション`,
+    trisUnit:         'ポリゴン',
+    // オブジェクトインスペクター
+    inspectVertices:  '頂点数',
+    inspectTriangles: 'ポリゴン数',
+    inspectShare:     'シーン占有率',
+    inspectTexture:   'テクスチャ',
+    inspectSize:      'サイズ',
+    inspectHeavy:     '重い',
+    inspectNone:      'なし',
+    inspectHint:      'オブジェクトをクリックして詳細を表示',
+    // Lighting panel
+    lightingTitle:    'ライティング',
+    envLabel:         '環境',
+    envStudio:        '🏢 スタジオ',
+    envOutdoor:       '☀️ 屋外',
+    envSunset:        '🌇 夕暮れ',
+    envNight:         '🌙 夜',
+    sunIntLabel:      '太陽の強度',
+    ambLabel:         '環境光',
+    sunAngleLabel:    '太陽の方角',
+    sunHeightLabel:   '太陽の高度',
+    skyColorLabel2:   '空の色',
+    // Viewer controls
+    btnReset:         'リセット',
+    btnWireframe:     'ワイヤーフレーム',
+    btnRotate:        '自動回転',
+    // Detail panel
+    sizeCompTitle:    'サイズ比較',
+    keyFileSize:      'ファイルサイズ',
+    keyVertices:      '頂点数',
+    keyTriangles:     'ポリゴン数',
+    keyTextures:      'テクスチャ',
+    keyAnimations:    'アニメーション',
+    analysisTitle:    'UE5モデル解析',
+    polyBudget:       'ポリゴン予算',
+    texBreakTitle:    'テクスチャ一覧',
+    logTitle:         '最適化ログ',
+    downloadBtn:      '⬇ 最適化済みGLBをダウンロード',
+    // Dynamic strings
+    noAnimations:     'なし',
+    animCount:        (n) => `${n}個のアニメーション`,
+    texConvCount:     (n) => `${n}枚のテクスチャ → PNG`,
+    noTextures:       'モデルにテクスチャが見つかりません',
+    copiedLabel:      '✓ コピーしました！',
+    // Preset hints
+    hintQuality:      'メッシュ変更なし — テクスチャを2K PNGに変換・リサイズ',
+    hintBalanced:     'メッシュ50%削減 + テクスチャ2K PNG',
+    hintSmall:        '最大圧縮 — メッシュ25% + テクスチャ1K PNG',
+    // UE5 checks
+    check1:           '全テクスチャをPNGに変換済み',
+    check2:           'UE5非対応の拡張機能を除去済み',
+    check3:           '重複ジオメトリを削除済み',
+    check4:           'ポリゴン数が予算内',
+    check5:           'ファイルサイズが50MB以下',
+    // Budget categories
+    budgetIconProp:   'アイコン小物',
+    budgetSmall:      '小型プロップ',
+    budgetMedium:     '中型プロップ',
+    budgetLarge:      '大型プロップ / 乗り物',
+    budgetHero:       'ヒーローキャラクター',
+    budgetHeavy:      '非常に重い（LOD0のみ推奨）',
+    // Copy report
+    reportHeader:     '=== GLBオプティマイザー レポート ===',
+    reportTime:       (s) => `処理時間: ${s}秒`,
+    reportOriginal:   '元データ',
+    reportOptimized:  '最適化後',
+    reportSaved:      '削減',
+    reportSteps:      '--- 手順 ---',
+    // サーバーログ行（localizeLog() でクライアント側でローカライズ）
+    logMesh:          (before, after, pct) => `メッシュ: ${before} → ${after} 頂点（${pct}% 削減）`,
+    logAnim:          'アニメーション: キーフレームをロスレスでリサンプル',
+    logTextures:      (n, conv, saved, mb) => `テクスチャ: ${n}枚 → すべてPNGに変換${conv ? `（${conv}枚を形式変換）` : ''} · ${mb} MB ${saved ? '削減' : '増加'}`,
+    logCleanup:       'クリーンアップ: 重複を削除しシーンを統合',
+  },
+};
+
+let currentLang = 'en';
+
+function t(key, ...args) {
+  const val = LANGS[currentLang]?.[key] ?? LANGS.en[key];
+  if (typeof val === 'function') return val(...args);
+  return val ?? key;
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  document.documentElement.lang = lang === 'ja' ? 'ja' : 'en';
+
+  // Toggle button styles
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-ja').classList.toggle('active', lang === 'ja');
+
+  // Update all static data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    const val = t(key);
+    if (typeof val === 'string') el.textContent = val;
+  });
+
+  // Page title
+  document.title = t('appTitle') + ' — UE5 Ready';
+
+  // Re-apply dynamic preset hint if visible
+  const hintEl = document.getElementById('presetHint');
+  if (hintEl && hintEl._presetKey) {
+    hintEl.textContent = t(hintEl._presetKey);
+  }
+
+  // Re-render JS-generated content that isn't covered by [data-i18n]
+  refreshDynamicUI();
+}
+
+// Re-translate everything rendered dynamically in JS (results panel + viewer chrome).
+// Called on first render and again whenever the language changes.
+function refreshDynamicUI() {
+  // Viewer label (only meaningful once a model is loaded)
+  if (model) {
+    document.getElementById('viewerLabel').textContent = t('viewerLabelDynamic', viewerAnimCount);
+  }
+  // Compare / mesh badges depend on the current viewer mode
+  const bb = document.getElementById('badgeBefore');
+  const ba = document.getElementById('badgeAfter');
+  if (bb && ba) {
+    if (currentMode === 'mesh') {
+      bb.textContent = t('badgeOriginalMesh');
+      ba.textContent = t('badgeOptimizedMesh');
+    } else {
+      bb.textContent = t('badgeOriginal');
+      ba.textContent = t('badgeOptimized');
+    }
+  }
+  // Translatable result content
+  applyResultsI18n();
+
+  // Inspector card labels (numbers/name are language-independent and re-used as-is)
+  if (selectedStats) renderInspectCard(selectedStats);
+}
+
+// Sets only the language-dependent text inside the results panel.
+// Numbers, bars, colours and texture rows are language-independent and live in showResults().
+function applyResultsI18n() {
+  if (!lastData) return;
+  const b = lastData.before, a = lastData.after;
+
+  // Insight bar
+  const texLog    = lastData.log?.find(l => l.includes('format-converted')) || '';
+  const convMatch = texLog.match(/(\d+) format-converted/);
+  const convCount = convMatch ? convMatch[1] : '0';
+  document.getElementById('insight-tex').textContent   = t('texConvCount', convCount);
+  document.getElementById('insight-anims').textContent = b.anims > 0 ? t('animCount', b.anims) : t('noAnimations');
+
+  // Polygon budget label + category
+  const budget = getPolygonBudget(a.tris || 0);
+  document.getElementById('insight-budget').textContent = t(budget.labelKey);
+  document.getElementById('budgetLabel').textContent    = fmtN(a.tris) + ' ' + t('trisUnit');
+  document.getElementById('budgetCategory').textContent = t(budget.labelKey);
+
+  // Animations row
+  document.getElementById('d-anims').textContent = b.anims > 0 ? t('animCount', b.anims) : t('noAnimations');
+
+  // UE5 readiness checks
+  const checks = [
+    { ok: true,                      key: 'check1' },
+    { ok: true,                      key: 'check2' },
+    { ok: opts.cleanup,              key: 'check3' },
+    { ok: budget.color !== 'red',    key: 'check4' },
+    { ok: a.fileSize < 50*1024*1024, key: 'check5' },
+  ];
+  const checksEl = document.getElementById('ue5Checks');
+  checksEl.innerHTML = '';
+  checks.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'ue5-check';
+    div.innerHTML = `<span class="check-icon">${c.ok ? '✅' : '⚠️'}</span><span>${t(c.key)}</span>`;
+    checksEl.appendChild(div);
+  });
+
+  // Texture breakdown empty-state (texture rows themselves are language-independent)
+  if (!(b.texDetail && b.texDetail.length > 0)) {
+    document.getElementById('texBreakdown').innerHTML =
+      `<div style="font-size:11px;color:var(--muted);padding:4px 0">${t('noTextures')}</div>`;
+  }
+
+  // Optimization log (server sends raw English strings → localized here)
+  const logList = document.getElementById('logList');
+  logList.innerHTML = '';
+  (lastData.log || []).forEach(entry => {
+    const el = document.createElement('div');
+    el.className = 'log-item';
+    el.textContent = localizeLog(entry);
+    logList.appendChild(el);
+  });
+}
+
+// Translate a raw server log line into the current language.
+// Falls back to the original string if the line isn't a known pattern.
+function localizeLog(raw) {
+  let m;
+  if ((m = raw.match(/^Mesh: ([\d.,\s]+) → ([\d.,\s]+) vertices \((\d+)% reduced\)$/))) {
+    return t('logMesh', fmtN(parseInt(m[1].replace(/\D/g, ''), 10)),
+                        fmtN(parseInt(m[2].replace(/\D/g, ''), 10)), m[3]);
+  }
+  if (raw === 'Animations: keyframes resampled losslessly') return t('logAnim');
+  if ((m = raw.match(/^Textures: (\d+) texture\(s\) → all converted to PNG(?: \((\d+) format-converted\))? · (saved|added) ([\d.]+) MB$/))) {
+    return t('logTextures', m[1], m[2] ? parseInt(m[2], 10) : 0, m[3] === 'saved', m[4]);
+  }
+  if (raw === 'Cleanup: duplicates removed, scene flattened') return t('logCleanup');
+  return raw;
+}
+
+window.setLang = setLang;
+
+// ══════════════════════════════════════════
+// THEME — DARK / LIGHT TOGGLE
+// ══════════════════════════════════════════
+function applyTheme(theme) {
+  const isLight = theme === 'light';
+  document.documentElement.setAttribute('data-theme', isLight ? 'light' : 'dark');
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = isLight ? '☀️' : '🌙';
+  try { localStorage.setItem('glb-theme', isLight ? 'light' : 'dark'); } catch (e) {}
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyTheme(current === 'light' ? 'dark' : 'light');
+  updateMeshBg(); // keep the mesh-density backdrop in sync with the theme
+}
+
+window.toggleTheme = toggleTheme;
+
+// Neutral analysis backdrop for Mesh Density mode — follows the UI theme.
+function meshBgHex() {
+  return document.documentElement.getAttribute('data-theme') === 'light' ? 0xe9edf5 : 0x060810;
+}
+// Re-apply the mesh backdrop if (and only if) we're currently in mesh mode.
+function updateMeshBg() {
+  if (currentMode !== 'mesh') return;
+  const hex = meshBgHex();
+  if (scene)        scene.background        = new THREE.Color(hex);
+  if (sceneCompare) sceneCompare.background = new THREE.Color(hex);
+}
+
+// Restore saved preference (fall back to OS preference, then dark)
+(function initTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem('glb-theme'); } catch (e) {}
+  if (!saved) {
+    saved = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }
+  applyTheme(saved);
+})();
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let selectedFile = null, resultFilename = null, lastData = null;
+let processingTime = 0, compressionStart = 0;
+
+// Three.js
+let scene, sceneCompare;
+let camera, renderer, controls, clock;
+let model = null, modelBefore = null;
+let animMixer = null;
+let sunLight, ambientLight, fillLight, rimLight, hemiLight;
+let cLights = {}; // compare-scene light references
+let gridObj = null, gridObjC = null, shadowPlane = null;
+
+// ── Render-on-demand ──
+// The viewer only draws frames when something actually changes, instead of
+// burning the GPU at 60fps while the model just sits there. Any interaction
+// (orbit, hover, slider, button) requests a short burst of frames.
+let renderFrames = 1;            // frames still owed (>0 = keep drawing)
+function requestRender(frames = 30) {
+  renderFrames = Math.max(renderFrames, frames);
+}
+
+// UI state
+let wireframeOn = false, autoRotate = false, showGrid = true;
+let currentMode = 'preview';  // 'preview' | 'compare' | 'mesh'
+let compareSlider = 0.5;
+let isDragging = false;
+let beforeLoaded = false, beforeLoading = false;
+let lpCollapsed = false;
+let currentSkyHex = '#1a3060';
+let viewerAnimCount = 0;
+
+// Object inspector
+let modelDisplayScale = 1, sceneTotalTris = 0;
+let inspectRaycaster = null, inspectPointer = null;
+let hoveredMesh = null, selectedMesh = null, selectedCenter = null, selectedStats = null;
+let inspectHintDismissed = false;
+
+const opts = { simplify:true, texCompress:true, texResize:true, resample:true, cleanup:true };
 let texResizeVal = '2K';
 
-// ── Expose globals ─────────────────────────────────────
+// ── Expose to global onclick handlers ──
 window.toggleOpt          = toggleOpt;
 window.selectSize         = selectSize;
 window.applyPreset        = applyPreset;
@@ -639,28 +1544,38 @@ window.onSunAngle         = onSunAngle;
 window.onSunHeight        = onSunHeight;
 window.onSkyColor         = onSkyColor;
 window.toggleLightingPanel = toggleLightingPanel;
+window.setMode            = setMode;
+window.takeScreenshot     = takeScreenshot;
+window.toggleGroundGrid   = toggleGroundGrid;
+window.copyStats          = copyStats;
 
-// ── File input ────────────────────────────────────────
+// ══════════════════════════════════════════
+// FILE INPUT
+// ══════════════════════════════════════════
 const fileInput  = document.getElementById('fileInput');
 const uploadZone = document.getElementById('uploadZone');
+
 fileInput.addEventListener('change', e => { if (e.target.files[0]) setFile(e.target.files[0]); });
 uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.classList.add('drag'); });
 uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
 uploadZone.addEventListener('drop', e => {
   e.preventDefault(); uploadZone.classList.remove('drag');
   const f = e.dataTransfer.files[0];
-  if (f && f.name.toLowerCase().endsWith('.glb')) setFile(f);
+  if (f?.name.toLowerCase().endsWith('.glb')) setFile(f);
 });
 
 function setFile(f) {
   selectedFile = f;
+  beforeLoaded = false;
   const el = document.getElementById('fileChosen');
   el.textContent = `✓ ${f.name}  (${(f.size/1024/1024).toFixed(1)} MB)`;
   el.style.display = 'block';
   document.getElementById('compressBtn').disabled = false;
 }
 
-// ── Option toggles ─────────────────────────────────────
+// ══════════════════════════════════════════
+// OPTION TOGGLES
+// ══════════════════════════════════════════
 function toggleOpt(key) {
   opts[key] = !opts[key];
   const tog = document.getElementById('tog-' + key);
@@ -668,17 +1583,17 @@ function toggleOpt(key) {
   const sub = document.getElementById('sub-' + key);
   if (sub) sub.className = 'sub-options' + (opts[key] ? ' visible' : '');
 }
-function selectSize(el, val) {
-  texResizeVal = val;
-  document.querySelectorAll('#sub-texResize .select-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-}
 function setOpt(key, val) {
   opts[key] = val;
   const tog = document.getElementById('tog-' + key);
   if (tog) tog.className = 'toggle' + (val ? ' on' : '');
   const sub = document.getElementById('sub-' + key);
   if (sub) sub.className = 'sub-options' + (val ? ' visible' : '');
+}
+function selectSize(el, val) {
+  texResizeVal = val;
+  document.querySelectorAll('#sub-texResize .select-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
 }
 function setSimplifyRatio(val) {
   document.getElementById('simplifyRatio').value = val;
@@ -693,25 +1608,32 @@ function setSizeBtn(val) {
 function applyPreset(preset) {
   document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
+  const hintEl = document.getElementById('presetHint');
   if (preset === 'quality') {
     setOpt('simplify',false); setOpt('texCompress',true); setOpt('texResize',true);
     setOpt('resample',true); setOpt('cleanup',true); setSimplifyRatio(75); setSizeBtn('2K');
-    document.getElementById('presetHint').textContent = 'Light compression — textures 2K PNG, no mesh changes';
+    hintEl.textContent = t('hintQuality'); hintEl._presetKey = 'hintQuality';
   } else if (preset === 'balanced') {
     setOpt('simplify',true); setOpt('texCompress',true); setOpt('texResize',true);
     setOpt('resample',true); setOpt('cleanup',true); setSimplifyRatio(50); setSizeBtn('2K');
-    document.getElementById('presetHint').textContent = 'Balanced — 50% mesh reduction, textures 2K PNG';
-  } else if (preset === 'small') {
+    hintEl.textContent = t('hintBalanced'); hintEl._presetKey = 'hintBalanced';
+  } else {
     setOpt('simplify',true); setOpt('texCompress',true); setOpt('texResize',true);
     setOpt('resample',true); setOpt('cleanup',true); setSimplifyRatio(25); setSizeBtn('1K');
-    document.getElementById('presetHint').textContent = 'Maximum compression — 25% mesh, textures 1K PNG';
+    hintEl.textContent = t('hintSmall'); hintEl._presetKey = 'hintSmall';
   }
 }
 
-// ── Compress ──────────────────────────────────────────
+// ══════════════════════════════════════════
+// COMPRESS
+// ══════════════════════════════════════════
 async function startCompress() {
   if (!selectedFile) return;
+  compressionStart = Date.now();
+  beforeLoaded = false;
+  if (currentMode !== 'preview') setMode('preview');
   showState('progress'); animateSteps();
+
   const form = new FormData();
   form.append('file',          selectedFile, selectedFile.name);
   form.append('simplify',      opts.simplify      ? 'true' : 'false');
@@ -721,20 +1643,23 @@ async function startCompress() {
   form.append('texResize',     opts.texResize ? texResizeVal : 'none');
   form.append('resample',      opts.resample      ? 'true' : 'false');
   form.append('cleanup',       opts.cleanup       ? 'true' : 'false');
+
   try {
-    const res  = await fetch('/compress', { method: 'POST', body: form });
+    const res  = await fetch('/compress', { method:'POST', body:form });
     const data = await res.json();
-    if (!data.ok) throw new Error(data.error || 'Unknown error');
-    resultFilename = data.outputName;
+    if (!data.ok) throw new Error(data.error || 'Unknown server error');
+    processingTime = ((Date.now() - compressionStart) / 1000).toFixed(1);
+    lastData = data;
     showResults(data);
-    loadModel(`/preview/${data.outputName}`);
+    loadModel('/preview/' + data.outputName);
+    resultFilename = data.outputName;
   } catch (err) { showError(err.message); }
 }
 
 let stepTimer = null;
 function animateSteps() {
   const steps = [1,2,3,4]; let i = 0;
-  steps.forEach(n => { document.getElementById('step'+n).className = 'step-item'; });
+  steps.forEach(n => document.getElementById('step'+n).className = 'step-item');
   stepTimer = setInterval(() => {
     if (i > 0) document.getElementById('step'+steps[i-1]).className = 'step-item done';
     if (i < steps.length) { document.getElementById('step'+steps[i]).className = 'step-item active'; i++; }
@@ -742,91 +1667,166 @@ function animateSteps() {
   }, 800);
 }
 
-function showState(state) {
+function showState(s) {
   clearInterval(stepTimer);
-  document.getElementById('welcomeState').style.display  = 'none';
-  document.getElementById('progressState').classList.remove('show');
-  document.getElementById('errorState').classList.remove('show');
-  document.getElementById('resultsState').classList.remove('show');
-  if (state === 'welcome')  document.getElementById('welcomeState').style.display = 'flex';
-  if (state === 'progress') document.getElementById('progressState').classList.add('show');
-  if (state === 'error')    document.getElementById('errorState').classList.add('show');
-  if (state === 'results')  document.getElementById('resultsState').classList.add('show');
+  ['welcomeState','progressState','errorState','resultsState'].forEach(id => {
+    const el = document.getElementById(id);
+    if (id === 'welcomeState') el.style.display = (s === 'welcome') ? 'flex' : 'none';
+    else el.classList.toggle('show', id.replace('State','') === s);
+  });
 }
 function showError(msg) { document.getElementById('errorText').textContent = msg; showState('error'); }
 
+// ══════════════════════════════════════════
+// RESULTS DISPLAY
+// ══════════════════════════════════════════
 function fmt(bytes) {
   if (bytes >= 1024*1024) return (bytes/1024/1024).toFixed(2) + ' MB';
-  return (bytes/1024).toFixed(0) + ' KB';
+  return Math.round(bytes/1024) + ' KB';
 }
 function fmtN(n) { return (n||0).toLocaleString(); }
+
+function getPolygonBudget(tris) {
+  if (tris < 2000)   return { labelKey:'budgetIconProp', color:'green',  pct: Math.min((tris/2000)*15, 15) };
+  if (tris < 10000)  return { labelKey:'budgetSmall',    color:'green',  pct: 15 + (tris-2000)/8000*20 };
+  if (tris < 30000)  return { labelKey:'budgetMedium',   color:'green',  pct: 35 + (tris-10000)/20000*20 };
+  if (tris < 80000)  return { labelKey:'budgetLarge',    color:'yellow', pct: 55 + (tris-30000)/50000*25 };
+  if (tris < 200000) return { labelKey:'budgetHero',     color:'yellow', pct: 80 + (tris-80000)/120000*15 };
+  return { labelKey:'budgetHeavy', color:'red', pct: 100 };
+}
 
 function showResults(data) {
   clearInterval(stepTimer);
   const b = data.before, a = data.after;
+
+  // Stats bar
+  const savedPct = parseFloat(data.savedPct);
+  const vertPct  = b.verts > 0 ? Math.round(((b.verts-a.verts)/b.verts)*100) : 0;
   document.getElementById('stat-before').textContent = fmt(b.fileSize);
   document.getElementById('stat-after').textContent  = fmt(a.fileSize);
-  const savedPct = parseFloat(data.savedPct);
-  const savedEl  = document.getElementById('stat-saved');
+  const savedEl = document.getElementById('stat-saved');
   savedEl.textContent = '-' + data.savedPct + '%';
-  savedEl.className   = 'val ' + (savedPct >= 40 ? 'green' : savedPct >= 15 ? 'yellow' : 'red');
-  const vertPct = b.verts > 0 ? (((b.verts - a.verts) / b.verts) * 100).toFixed(0) : 0;
-  const vertEl  = document.getElementById('stat-verts');
-  vertEl.textContent = '-' + vertPct + '%';
-  vertEl.className   = 'val ' + (vertPct >= 40 ? 'green' : vertPct >= 10 ? 'yellow' : '');
-  document.getElementById('d-size-before').textContent = fmt(b.fileSize);
-  document.getElementById('d-size-after').textContent  = fmt(a.fileSize);
-  document.getElementById('d-size-saved').textContent  = '-' + data.savedPct + '%';
+  savedEl.className   = 'val ' + (savedPct>=40?'green':savedPct>=15?'yellow':'red');
+  const vertsEl = document.getElementById('stat-verts');
+  vertsEl.textContent = '-' + vertPct + '%';
+  vertsEl.className   = 'val ' + (vertPct>=40?'green':vertPct>=10?'yellow':'');
+
+  // Animate mini bars
+  setTimeout(() => {
+    const savedColor = savedPct>=40?'green':savedPct>=15?'yellow':'red';
+    const vertColor  = vertPct>=40?'green':vertPct>=10?'yellow':'';
+    setBar('bar-saved', savedPct, savedColor);
+    setBar('bar-verts', vertPct,  vertColor || 'green');
+    setBar('bar-after', Math.max(5, 100 - savedPct), 'green');
+    setBar('bar-before', 100, '');
+  }, 80);
+
+  // Insight bar — processing time is language-independent; translatable parts in applyResultsI18n()
+  document.getElementById('insight-time').textContent = processingTime + 's';
+
+  // Polygon budget (used for the fill visuals below; label text set in applyResultsI18n())
+  const budget = getPolygonBudget(a.tris || 0);
+
+  // Compare rows
+  document.getElementById('d-size-before').textContent  = fmt(b.fileSize);
+  document.getElementById('d-size-after').textContent   = fmt(a.fileSize);
+  document.getElementById('d-size-saved').textContent   = '-' + data.savedPct + '%';
   document.getElementById('d-verts-before').textContent = fmtN(b.verts);
   document.getElementById('d-verts-after').textContent  = fmtN(a.verts);
-  document.getElementById('d-tris-before').textContent = fmtN(b.tris);
-  document.getElementById('d-tris-after').textContent  = fmtN(a.tris);
-  document.getElementById('d-tex-before').textContent  = fmt(b.texBytes);
-  document.getElementById('d-tex-after').textContent   = fmt(a.texBytes);
-  const texSaved = b.texBytes - a.texBytes;
+  document.getElementById('d-tris-before').textContent  = fmtN(b.tris);
+  document.getElementById('d-tris-after').textContent   = fmtN(a.tris);
+  document.getElementById('d-tex-before').textContent   = fmt(b.texBytes);
+  document.getElementById('d-tex-after').textContent    = fmt(a.texBytes);
+  const texSaved   = b.texBytes - a.texBytes;
   const texSavedEl = document.getElementById('d-tex-saved');
-  if (texSaved > 0) { texSavedEl.textContent = '-' + ((texSaved/b.texBytes)*100).toFixed(0)+'%'; texSavedEl.style.display='inline'; }
-  else texSavedEl.style.display = 'none';
-  document.getElementById('d-anims').textContent = b.anims > 0 ? `${b.anims} animation(s)` : 'None';
+  if (texSaved > 0 && b.texBytes > 0) {
+    texSavedEl.textContent  = '-' + Math.round((texSaved/b.texBytes)*100) + '%';
+    texSavedEl.style.display = 'inline';
+  } else { texSavedEl.style.display = 'none'; }
+
+  // Polygon budget panel — fill visuals (label/category text set in applyResultsI18n())
+  const budgetLabelEl = document.getElementById('budgetLabel');
+  const budgetFillEl  = document.getElementById('budgetFill');
+  budgetLabelEl.style.color = budget.color === 'green' ? 'var(--green)' : budget.color === 'yellow' ? 'var(--yellow)' : 'var(--red)';
+  budgetFillEl.className     = 'budget-fill ' + budget.color;
+  setTimeout(() => { budgetFillEl.style.width = budget.pct + '%'; }, 80);
+
+  // Texture breakdown
   const breakdown = document.getElementById('texBreakdown');
   breakdown.innerHTML = '';
-  if (b.texDetail && b.texDetail.length > 0) {
-    for (const tex of b.texDetail) {
+  if (b.texDetail?.length > 0) {
+    b.texDetail.forEach(tex => {
       const row = document.createElement('div');
-      row.style.cssText = 'display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)';
-      const nameEl = document.createElement('span');
-      nameEl.style.cssText = 'color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px';
-      nameEl.title = tex.name; nameEl.textContent = tex.name;
-      const infoEl = document.createElement('span');
-      const fmtShort = tex.mime === 'image/jpeg' ? 'JPG' : tex.mime === 'image/png' ? 'PNG' : '?';
-      infoEl.style.cssText = 'color:var(--accent);flex-shrink:0;margin-left:6px';
-      infoEl.textContent = `${fmtShort} · ${fmt(tex.size)}`;
-      row.appendChild(nameEl); row.appendChild(infoEl); breakdown.appendChild(row);
-    }
-  } else { breakdown.textContent = 'No textures found in model'; }
-  const logList = document.getElementById('logList');
-  logList.innerHTML = '';
-  for (const entry of (data.log || [])) {
-    const el = document.createElement('div');
-    el.className = 'log-item'; el.textContent = '✓ ' + entry; logList.appendChild(el);
+      row.className = 'tex-row';
+      const origFmt = tex.mime === 'image/jpeg' ? 'JPG' : tex.mime === 'image/png' ? 'PNG' : (tex.mime?.split('/')[1]?.toUpperCase() || '?');
+      const wasConverted = tex.mime !== 'image/png';
+      row.innerHTML = `
+        <span class="tex-name" title="${tex.name}">${tex.name || 'texture'}</span>
+        <div class="tex-info">
+          ${wasConverted ? `<span class="format-tag ${origFmt.toLowerCase()}">${origFmt}</span><span class="arrow-tag">→</span>` : ''}
+          <span class="format-tag png">PNG</span>
+          <span class="tex-size">${fmt(tex.size)}</span>
+        </div>`;
+      breakdown.appendChild(row);
+    });
+  } else {
+    breakdown.innerHTML = `<div style="font-size:11px;color:var(--muted);padding:4px 0">${t('noTextures')}</div>`;
   }
+
+  // Fill in all language-dependent text (insight bar, budget labels, UE5 checks, log, etc.)
+  applyResultsI18n();
+
   showState('results');
+}
+
+function setBar(id, pct, colorClass) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.width = Math.min(100, Math.max(0, pct)) + '%';
+  if (colorClass) el.className = 'stat-mini-fill ' + colorClass;
+}
+
+// ══════════════════════════════════════════
+// COPY STATS
+// ══════════════════════════════════════════
+function copyStats() {
+  if (!lastData) return;
+  const b = lastData.before, a = lastData.after;
+  const lines = [
+    t('reportHeader'),
+    t('reportTime', processingTime),
+    '',
+    `${t('reportOriginal')}:   ${fmt(b.fileSize)}  |  ${fmtN(b.verts)} verts  |  ${fmtN(b.tris)} tris`,
+    `${t('reportOptimized')}:  ${fmt(a.fileSize)}  |  ${fmtN(a.verts)} verts  |  ${fmtN(a.tris)} tris`,
+    `${t('reportSaved')}:      ${lastData.savedPct}% size  |  ${b.verts>0?Math.round(((b.verts-a.verts)/b.verts)*100):0}% vertices`,
+    `Textures:   ${b.texDetail?.length||0} → PNG`,
+    '',
+    t('reportSteps'),
+    ...(lastData.log || []).map(l => '✓ ' + localizeLog(l)),
+  ];
+  navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = t('copiedLabel');
+    setTimeout(() => btn.textContent = t('copyReport'), 2000);
+  }).catch(() => {});
 }
 
 function downloadResult() {
   if (!resultFilename) return;
   const a = document.createElement('a');
-  a.href = `/download/${resultFilename}`; a.download = resultFilename; a.click();
+  a.href = '/download/' + resultFilename;
+  a.download = resultFilename;
+  a.click();
 }
 
-// ══════════════════════════════════════════════════════
-// ── Three.js viewer with full UE5-style lighting ──────
-// ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════
+// THREE.JS VIEWER
+// ══════════════════════════════════════════
 function initViewer() {
   const canvas = document.getElementById('canvas3d');
   const panel  = canvas.parentElement;
 
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias:true, preserveDrawingBuffer:true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.toneMapping         = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.2;
@@ -834,7 +1834,7 @@ function initViewer() {
   renderer.shadowMap.type      = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace    = THREE.SRGBColorSpace;
 
-  scene  = new THREE.Scene();
+  scene = new THREE.Scene();
   scene.background = new THREE.Color(0x1a3060);
 
   camera = new THREE.PerspectiveCamera(45, 1, 0.01, 1000);
@@ -845,179 +1845,621 @@ function initViewer() {
   controls.dampingFactor = 0.06;
   controls.minDistance   = 0.1;
   controls.maxDistance   = 200;
+  // Orbit/zoom/pan (and damping settle) keep requesting frames until they stop.
+  controls.addEventListener('change', () => requestRender());
 
-  // ── Main sun (DirectionalLight with shadows) ──────
+  // Any pointer interaction or UI input triggers a render burst, so nothing
+  // visual (hover highlight, sliders, color/light changes) is ever missed.
+  ['pointerdown', 'pointermove', 'pointerup', 'wheel'].forEach(ev =>
+    canvas.addEventListener(ev, () => requestRender(), { passive: true }));
+  document.addEventListener('input', () => requestRender(), true);
+  document.addEventListener('click', () => requestRender(), true);
+
+  // ── Main scene lights ──
   sunLight = new THREE.DirectionalLight(0xfff5e0, 1.8);
   sunLight.castShadow = true;
   sunLight.shadow.mapSize.width  = 2048;
   sunLight.shadow.mapSize.height = 2048;
-  sunLight.shadow.camera.near   = 0.1;
-  sunLight.shadow.camera.far    = 200;
-  sunLight.shadow.camera.left   = -15;
-  sunLight.shadow.camera.right  = 15;
-  sunLight.shadow.camera.top    = 15;
-  sunLight.shadow.camera.bottom = -15;
-  sunLight.shadow.bias          = -0.0005;
+  sunLight.shadow.camera.near = 0.1; sunLight.shadow.camera.far = 200;
+  sunLight.shadow.camera.left = -15; sunLight.shadow.camera.right = 15;
+  sunLight.shadow.camera.top  =  15; sunLight.shadow.camera.bottom = -15;
+  sunLight.shadow.bias = -0.0005;
   scene.add(sunLight);
-  setSunPosition(45, 60);
 
-  // ── Ambient (sky bounce) ──────────────────────────
   ambientLight = new THREE.AmbientLight(0xc8d8ff, 0.6);
   scene.add(ambientLight);
 
-  // ── Hemisphere (sky/ground gradient) ─────────────
   hemiLight = new THREE.HemisphereLight(0x9ab8ff, 0x6a5430, 0.4);
   scene.add(hemiLight);
 
-  // ── Fill (opposite to sun, cool sky) ─────────────
   fillLight = new THREE.DirectionalLight(0x8ab4ff, 0.35);
   fillLight.position.set(-6, 4, -6);
   scene.add(fillLight);
 
-  // ── Rim (warm backlight edge pop) ─────────────────
   rimLight = new THREE.DirectionalLight(0xffcc88, 0.3);
   rimLight.position.set(0, -3, -10);
   scene.add(rimLight);
 
-  // ── Ground shadow plane ───────────────────────────
-  const groundMesh = new THREE.Mesh(
+  // Ground
+  shadowPlane = new THREE.Mesh(
     new THREE.PlaneGeometry(40, 40),
-    new THREE.ShadowMaterial({ opacity: 0.3 })
+    new THREE.ShadowMaterial({ opacity:0.28 })
   );
-  groundMesh.rotation.x = -Math.PI / 2;
-  groundMesh.position.y = -1.5;
-  groundMesh.receiveShadow = true;
-  scene.add(groundMesh);
+  shadowPlane.rotation.x = -Math.PI/2;
+  shadowPlane.position.y = -1.5;
+  shadowPlane.receiveShadow = true;
+  scene.add(shadowPlane);
 
-  // ── Grid ──────────────────────────────────────────
-  const grid = new THREE.GridHelper(20, 20, 0x3a4a70, 0x202840);
-  grid.position.y = -1.5;
-  scene.add(grid);
+  gridObj = new THREE.GridHelper(20, 20, 0x3a4a70, 0x202840);
+  gridObj.position.y = -1.5;
+  scene.add(gridObj);
+
+  // ── Compare scene ──
+  initCompareScene();
 
   clock = new THREE.Clock();
 
+  // Resize
   function resize() {
     const w = panel.clientWidth, h = panel.clientHeight;
     renderer.setSize(w, h, false);
-    camera.aspect = w / h;
+    camera.aspect = w/h;
     camera.updateProjectionMatrix();
   }
   resize();
-  new ResizeObserver(resize).observe(panel);
+  new ResizeObserver(() => { resize(); requestRender(); }).observe(panel);
 
-  (function animate() {
-    requestAnimationFrame(animate);
+  // Render loop
+  (function render() {
+    requestAnimationFrame(render);
     const dt = clock.getDelta();
     controls.autoRotate = autoRotate;
     controls.update();
     if (animMixer) animMixer.update(dt);
-    renderer.render(scene, camera);
+
+    // Render-on-demand: skip drawing when the scene is idle. Auto-rotate and
+    // playing animations are continuous, so they always draw.
+    const continuous = autoRotate || !!animMixer;
+    if (renderFrames <= 0 && !continuous) return;
+    if (renderFrames > 0) renderFrames--;
+
+    if (currentMode === 'preview' || currentMode === 'inspect') {
+      if (selectedMesh) updateInspectCardPosition();
+      renderer.setScissorTest(false);
+      renderer.setViewport(0, 0, renderer.domElement.width, renderer.domElement.height);
+      renderer.render(scene, camera);
+    } else {
+      renderSplit();
+    }
   })();
 
-  // Start with outdoor preset
+  // Compare drag
+  initCompareDrag();
+
+  // Object inspector (hover + click-to-pin)
+  initInspect();
+
+  // Apply default outdoor preset
+  setSunPosition(45, 60);
   applyEnvPreset('outdoor');
 }
 
-// ── Sun position (spherical → cartesian) ──────────────
+function initCompareScene() {
+  sceneCompare = new THREE.Scene();
+  sceneCompare.background = new THREE.Color(currentSkyHex);
+
+  cLights.sun = new THREE.DirectionalLight(0xfff5e0, 1.8);
+  cLights.sun.castShadow = false;
+  sceneCompare.add(cLights.sun);
+
+  cLights.ambient = new THREE.AmbientLight(0xc8d8ff, 0.6);
+  sceneCompare.add(cLights.ambient);
+
+  cLights.hemi = new THREE.HemisphereLight(0x9ab8ff, 0x6a5430, 0.4);
+  sceneCompare.add(cLights.hemi);
+
+  cLights.fill = new THREE.DirectionalLight(0x8ab4ff, 0.35);
+  cLights.fill.position.set(-6, 4, -6);
+  sceneCompare.add(cLights.fill);
+
+  cLights.rim = new THREE.DirectionalLight(0xffcc88, 0.3);
+  cLights.rim.position.set(0, -3, -10);
+  sceneCompare.add(cLights.rim);
+
+  gridObjC = new THREE.GridHelper(20, 20, 0x3a4a70, 0x202840);
+  gridObjC.position.y = -1.5;
+  sceneCompare.add(gridObjC);
+}
+
+// ── Split rendering ──
+function renderSplit() {
+  const W = renderer.domElement.width;
+  const H = renderer.domElement.height;
+  const splitX = Math.round(compareSlider * W);
+
+  renderer.setScissorTest(true);
+
+  // Left half: before model
+  renderer.setScissor(0, 0, splitX, H);
+  renderer.setViewport(0, 0, W, H);
+  renderer.render(sceneCompare, camera);
+
+  // Right half: after model
+  renderer.setScissor(splitX, 0, W-splitX, H);
+  renderer.setViewport(0, 0, W, H);
+  renderer.render(scene, camera);
+
+  renderer.setScissorTest(false);
+  renderer.setViewport(0, 0, W, H);
+}
+
+// ── Sun position ──
 function setSunPosition(azDeg, elDeg) {
-  const az = (azDeg  * Math.PI) / 180;
-  const el = (elDeg  * Math.PI) / 180;
+  const az = azDeg * Math.PI/180;
+  const el = elDeg * Math.PI/180;
   const r  = 15;
-  sunLight.position.set(
+  const pos = new THREE.Vector3(
     r * Math.cos(el) * Math.sin(az),
     r * Math.sin(el),
     r * Math.cos(el) * Math.cos(az)
   );
+  sunLight.position.copy(pos);
+  if (cLights.sun) cLights.sun.position.copy(pos);
 }
 
-// ── Lighting control callbacks ────────────────────────
-function onSunIntensity(v) {
-  sunLight.intensity = parseFloat(v);
-  document.getElementById('sunIntVal').textContent = parseFloat(v).toFixed(1);
-}
-function onAmbientIntensity(v) {
-  const val = parseFloat(v);
-  ambientLight.intensity = val;
-  hemiLight.intensity    = val * 0.65;
-  document.getElementById('ambIntVal').textContent = val.toFixed(2);
-}
-function onSunAngle(v) {
-  document.getElementById('sunAngVal').textContent = v + '°';
-  setSunPosition(parseInt(v), parseInt(document.getElementById('sunHtSlider').value));
-}
-function onSunHeight(v) {
-  document.getElementById('sunHtVal').textContent = v + '°';
-  setSunPosition(parseInt(document.getElementById('sunAngSlider').value), parseInt(v));
-}
-function onSkyColor(v) {
-  scene.background = new THREE.Color(v);
-  document.getElementById('skyColorLabel').textContent = v;
-  // Tint ambient to loosely follow sky
-  const skyC = new THREE.Color(v);
-  ambientLight.color.set(skyC).lerp(new THREE.Color(0xffffff), 0.45);
+// ══════════════════════════════════════════
+// VIEWER MODES
+// ══════════════════════════════════════════
+function setMode(mode) {
+  const prev = currentMode;
+
+  // Leave mesh mode: restore materials
+  if (prev === 'mesh') {
+    if (model) restoreMats(model);
+    if (modelBefore) restoreMats(modelBefore);
+    applySky(currentSkyHex);
+  }
+
+  currentMode = mode;
+
+  // Update tabs
+  document.querySelectorAll('.vtab').forEach(b => b.classList.remove('active'));
+  const tabEl = document.getElementById('vtab-' + mode);
+  if (tabEl) tabEl.classList.add('active');
+
+  // Compare overlay
+  const overlay = document.getElementById('compareOverlay');
+  overlay.classList.toggle('active', mode === 'compare' || mode === 'mesh');
+
+  // Update badges
+  const bb = document.getElementById('badgeBefore');
+  const ba = document.getElementById('badgeAfter');
+  if (mode === 'mesh') {
+    bb.textContent = t('badgeOriginalMesh');
+    ba.textContent = t('badgeOptimizedMesh');
+  } else {
+    bb.textContent = t('badgeOriginal');
+    ba.textContent = t('badgeOptimized');
+  }
+
+  // Mesh mode wireframes
+  if (mode === 'mesh') {
+    const mbg = meshBgHex();
+    scene.background = new THREE.Color(mbg);
+    if (sceneCompare) sceneCompare.background = new THREE.Color(mbg);
+    if (model)       applyWireframe(model,       0x4f8ef7); // blue = optimized
+    if (modelBefore) applyWireframe(modelBefore, 0xff9944); // orange = original
+  }
+
+  // Load before model on demand
+  if ((mode === 'compare' || mode === 'mesh') && !beforeLoaded && !beforeLoading && selectedFile) {
+    loadBeforeModel();
+  }
+
+  // Object inspector lives in its own "Inspect" mode.
+  if (mode === 'inspect' && wireframeOn) {        // clean materials so highlighting reads
+    wireframeOn = false;
+    if (model) restoreMats(model);
+    document.getElementById('wireframeBtn').classList.remove('active');
+  }
+  if (mode !== 'inspect') clearInspect();
+  updateInspectHint();
 }
 
-// ── Environment presets ───────────────────────────────
+// ══════════════════════════════════════════
+// WIREFRAME HELPERS
+// ══════════════════════════════════════════
+function applyWireframe(obj, hexColor) {
+  obj.traverse(child => {
+    if (!child.isMesh) return;
+    if (!child._origMat) child._origMat = child.material;
+    child.material = new THREE.MeshBasicMaterial({ color: hexColor, wireframe: true });
+  });
+}
+function restoreMats(obj) {
+  obj.traverse(child => {
+    if (child.isMesh && child._origMat) {
+      child.material = child._origMat;
+      delete child._origMat;
+    }
+  });
+}
+function applySky(hex) {
+  scene.background = new THREE.Color(hex);
+  if (sceneCompare) sceneCompare.background = new THREE.Color(hex);
+}
+
+// ══════════════════════════════════════════
+// OBJECT INSPECTOR — hover highlight + click-to-pin details
+// ══════════════════════════════════════════
+function initInspect() {
+  const canvas = document.getElementById('canvas3d');
+  inspectRaycaster = new THREE.Raycaster();
+  inspectPointer   = new THREE.Vector2();
+  let downX = 0, downY = 0, down = false, lastHover = 0;
+
+  function toNDC(e) {
+    const r = canvas.getBoundingClientRect();
+    inspectPointer.x =  ((e.clientX - r.left) / r.width)  * 2 - 1;
+    inspectPointer.y = -((e.clientY - r.top)  / r.height) * 2 + 1;
+    return r;
+  }
+  function pick() {
+    if (!model) return null;
+    inspectRaycaster.setFromCamera(inspectPointer, camera);
+    const hits = inspectRaycaster.intersectObject(model, true);
+    for (const h of hits) if (h.object && h.object.isMesh) return h.object;
+    return null;
+  }
+
+  canvas.addEventListener('pointerdown', e => { down = true; downX = e.clientX; downY = e.clientY; });
+
+  canvas.addEventListener('pointermove', e => {
+    const rect = toNDC(e);
+    if (currentMode !== 'inspect' || wireframeOn || down) { hideTag(); return; }
+    const now = performance.now();
+    if (now - lastHover < 40) return;   // throttle raycasts
+    lastHover = now;
+    const m = pick();
+    onHover(m);
+    if (m) showTag(e, rect, m); else hideTag();
+  });
+
+  canvas.addEventListener('pointerup', e => {
+    const moved = Math.abs(e.clientX - downX) + Math.abs(e.clientY - downY);
+    down = false;
+    if (currentMode !== 'inspect' || wireframeOn) return;
+    if (moved > 6) return;              // it was an orbit drag, not a click
+    toNDC(e);
+    const m = pick();
+    if (m) selectMesh(m); else clearInspect();
+  });
+
+  canvas.addEventListener('pointerleave', () => {
+    hideTag();
+    if (hoveredMesh && hoveredMesh !== selectedMesh) { clearMeshHighlight(hoveredMesh); hoveredMesh = null; }
+  });
+
+  document.getElementById('inspectClose').addEventListener('click', clearInspect);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') clearInspect(); });
+}
+
+function onHover(mesh) {
+  if (mesh === hoveredMesh) return;
+  if (hoveredMesh && hoveredMesh !== selectedMesh) clearMeshHighlight(hoveredMesh);
+  hoveredMesh = mesh;
+  if (mesh && mesh !== selectedMesh) setMeshHighlight(mesh, 'hover');
+}
+
+function selectMesh(mesh) {
+  if (selectedMesh && selectedMesh !== mesh) clearMeshHighlight(selectedMesh);
+  if (hoveredMesh === mesh) { clearMeshHighlight(mesh); hoveredMesh = null; }
+  selectedMesh = mesh;
+  setMeshHighlight(mesh, 'select');
+
+  const geo = mesh.geometry;
+  if (!geo.boundingSphere) geo.computeBoundingSphere();
+  selectedCenter = geo.boundingSphere ? geo.boundingSphere.center.clone() : new THREE.Vector3();
+  selectedStats  = computeMeshStats(mesh);
+  renderInspectCard(selectedStats);
+
+  document.getElementById('inspectCard').style.display = 'block';
+  inspectHintDismissed = true;
+  updateInspectHint();
+  updateInspectCardPosition();
+}
+
+function clearInspect() {
+  if (hoveredMesh)  { clearMeshHighlight(hoveredMesh);  hoveredMesh  = null; }
+  if (selectedMesh) { clearMeshHighlight(selectedMesh); selectedMesh = null; }
+  selectedCenter = null; selectedStats = null;
+  const card = document.getElementById('inspectCard');
+  if (card) card.style.display = 'none';
+  hideTag();
+  updateInspectHint();
+}
+
+function computeMeshStats(mesh) {
+  const geo = mesh.geometry;
+  const v = geo.attributes.position ? geo.attributes.position.count : 0;
+  const tri = geo.index ? Math.floor(geo.index.count / 3) : Math.floor(v / 3);
+  const pct = sceneTotalTris > 0 ? (tri / sceneTotalTris) * 100 : 0;
+
+  const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+  const map = mat && mat.map;
+  const texRes = (map && map.image && map.image.width)
+    ? `${map.image.width}×${map.image.height}` : null;
+
+  if (!geo.boundingBox) geo.computeBoundingBox();
+  mesh.updateWorldMatrix(true, false);
+  const ws = mesh.getWorldScale(new THREE.Vector3());
+  const s  = modelDisplayScale || 1;
+  const bb = geo.boundingBox;
+  const dim = bb
+    ? `${((bb.max.x-bb.min.x)*Math.abs(ws.x)/s).toFixed(2)} × ${((bb.max.y-bb.min.y)*Math.abs(ws.y)/s).toFixed(2)} × ${((bb.max.z-bb.min.z)*Math.abs(ws.z)/s).toFixed(2)}`
+    : '—';
+
+  const name = mesh.name || (mesh.parent && mesh.parent.name) || 'Mesh';
+  return { name, v, t: tri, pct, texRes, dim };
+}
+
+function renderInspectCard(s) {
+  document.getElementById('inspectName').textContent = s.name;
+  const heavyCls = s.pct >= 10 ? 'crit' : s.pct >= 5 ? 'warn' : '';
+  const heavyTag = s.pct >= 5 ? ` ⚠ ${t('inspectHeavy')}` : '';
+  const tex = s.texRes || t('inspectNone');
+  document.getElementById('inspectBody').innerHTML =
+    `<div class="inspect-row"><span>${t('inspectVertices')}</span><b>${s.v.toLocaleString()}</b></div>` +
+    `<div class="inspect-row"><span>${t('inspectTriangles')}</span><b>${s.t.toLocaleString()}</b></div>` +
+    `<div class="inspect-row"><span>${t('inspectShare')}</span><b class="${heavyCls}">${s.pct.toFixed(1)}%${heavyTag}</b></div>` +
+    `<div class="inspect-row"><span>${t('inspectTexture')}</span><b>${tex}</b></div>` +
+    `<div class="inspect-row"><span>${t('inspectSize')}</span><b>${s.dim}</b></div>`;
+}
+
+function updateInspectCardPosition() {
+  if (!selectedMesh || !selectedCenter || currentMode !== 'inspect') return;
+  const card  = document.getElementById('inspectCard');
+  const panel = document.getElementById('canvas3d').parentElement;
+  selectedMesh.updateWorldMatrix(true, false);
+  const p = selectedCenter.clone().applyMatrix4(selectedMesh.matrixWorld).project(camera);
+  if (p.z > 1) { card.style.display = 'none'; return; }   // behind the camera
+  card.style.display = 'block';
+  const w = panel.clientWidth, h = panel.clientHeight;
+  let left = (p.x * 0.5 + 0.5) * w + 18;
+  let top  = (-p.y * 0.5 + 0.5) * h - card.offsetHeight / 2;
+  left = Math.max(8, Math.min(left, w - card.offsetWidth  - 8));
+  top  = Math.max(8, Math.min(top,  h - card.offsetHeight - 8));
+  card.style.left = left + 'px';
+  card.style.top  = top  + 'px';
+}
+
+function showTag(e, rect, mesh) {
+  const tag = document.getElementById('inspectTag');
+  const s = computeMeshStats(mesh);
+  tag.innerHTML = `<b>${s.name}</b> · ${s.t.toLocaleString()} ${t('trisUnit')} · ${s.pct.toFixed(1)}%`;
+  tag.style.display = 'block';
+  const panel = document.getElementById('canvas3d').parentElement;
+  let x = e.clientX - rect.left + 14;
+  let y = e.clientY - rect.top  + 14;
+  x = Math.max(6, Math.min(x, panel.clientWidth  - tag.offsetWidth  - 8));
+  y = Math.max(6, Math.min(y, panel.clientHeight - tag.offsetHeight - 8));
+  tag.style.left = x + 'px';
+  tag.style.top  = y + 'px';
+  panel.classList.add('inspect-hovering');
+}
+function hideTag() {
+  const tag = document.getElementById('inspectTag');
+  if (tag) tag.style.display = 'none';
+  const panel = document.getElementById('canvas3d').parentElement;
+  if (panel) panel.classList.remove('inspect-hovering');
+}
+
+function updateInspectHint() {
+  const h = document.getElementById('inspectHint');
+  if (!h) return;
+  h.style.display = (!inspectHintDismissed && currentMode === 'inspect' && model && !selectedMesh)
+    ? 'block' : 'none';
+}
+
+function setMeshHighlight(mesh, kind) {
+  if (!mesh || !mesh.isMesh) return;
+  if (mesh._inspectOrigMat === undefined) mesh._inspectOrigMat = mesh.material;
+  const base  = mesh._inspectOrigMat;
+  const tint  = kind === 'select' ? 0x5599ff : 0x3a6ad0;
+  const inten = kind === 'select' ? 0.6 : 0.32;
+  const make = m => {
+    const c = m.clone();
+    if (c.emissive) { c.emissive = new THREE.Color(tint); c.emissiveIntensity = inten; }
+    return c;
+  };
+  mesh.material = Array.isArray(base) ? base.map(make) : make(base);
+}
+function clearMeshHighlight(mesh) {
+  if (!mesh || mesh._inspectOrigMat === undefined) return;
+  const cur = mesh.material, orig = mesh._inspectOrigMat;
+  if (cur !== orig) (Array.isArray(cur) ? cur : [cur]).forEach(m => m && m.dispose && m.dispose());
+  mesh.material = orig;
+  mesh._inspectOrigMat = undefined;
+}
+
+// ══════════════════════════════════════════
+// LOAD MODELS
+// ══════════════════════════════════════════
+function loadModel(url) {
+  if (model) { scene.remove(model); model = null; animMixer = null; }
+
+  new GLTFLoader().load(url, gltf => {
+    model = gltf.scene;
+    model.traverse(obj => {
+      if (obj.isMesh) { obj.castShadow = true; obj.receiveShadow = true; }
+    });
+
+    const box    = new THREE.Box3().setFromObject(model);
+    const size   = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const sc     = 3.0 / Math.max(size.x, size.y, size.z);
+    model.scale.setScalar(sc);
+    model.position.set(-center.x*sc, -center.y*sc, -center.z*sc);
+    scene.add(model);
+
+    // Fit shadow frustum
+    const hs = Math.max(size.x, size.y, size.z)*sc/2 + 2;
+    Object.assign(sunLight.shadow.camera, { left:-hs*4, right:hs*4, top:hs*4, bottom:-hs*4 });
+    sunLight.shadow.camera.updateProjectionMatrix();
+
+    resetCamera();
+
+    if (gltf.animations?.length) {
+      animMixer = new THREE.AnimationMixer(model);
+      animMixer.clipAction(gltf.animations[0]).play();
+    }
+
+    if (currentMode === 'mesh') applyWireframe(model, 0x4f8ef7);
+
+    requestRender();   // async load finished outside any interaction
+
+    viewerAnimCount = gltf.animations?.length || 0;
+    document.getElementById('viewerLabel').textContent = t('viewerLabelDynamic', viewerAnimCount);
+
+    // Inspector: reset selection and compute scene totals for "% of scene"
+    modelDisplayScale = sc;
+    sceneTotalTris = 0;
+    model.traverse(o => {
+      if (o.isMesh && o.geometry) {
+        const g = o.geometry;
+        sceneTotalTris += g.index ? g.index.count / 3 : (g.attributes.position ? g.attributes.position.count / 3 : 0);
+      }
+    });
+    clearInspect();
+    inspectHintDismissed = false;
+    updateInspectHint();
+  }, undefined, err => console.error('GLB load error:', err));
+}
+
+function loadBeforeModel() {
+  if (!selectedFile || beforeLoading) return;
+  beforeLoading = true;
+  const loadEl = document.getElementById('compareLoading');
+  loadEl.classList.add('show');
+
+  const url = URL.createObjectURL(selectedFile);
+
+  new GLTFLoader().load(url, gltf => {
+    URL.revokeObjectURL(url);
+    if (modelBefore) { sceneCompare.remove(modelBefore); modelBefore = null; }
+
+    modelBefore = gltf.scene;
+    modelBefore.traverse(obj => {
+      if (obj.isMesh) { obj.castShadow = true; obj.receiveShadow = true; }
+    });
+
+    const box    = new THREE.Box3().setFromObject(modelBefore);
+    const size   = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const sc     = 3.0 / Math.max(size.x, size.y, size.z);
+    modelBefore.scale.setScalar(sc);
+    modelBefore.position.set(-center.x*sc, -center.y*sc, -center.z*sc);
+    sceneCompare.add(modelBefore);
+
+    beforeLoaded = true;
+    beforeLoading = false;
+    loadEl.classList.remove('show');
+
+    if (currentMode === 'mesh') applyWireframe(modelBefore, 0xff9944);
+
+    requestRender();   // async load finished outside any interaction
+
+  }, undefined, err => {
+    URL.revokeObjectURL(url);
+    console.error('Original model load failed:', err);
+    beforeLoading = false;
+    loadEl.classList.remove('show');
+  });
+}
+
+// ══════════════════════════════════════════
+// COMPARE DRAG
+// ══════════════════════════════════════════
+function initCompareDrag() {
+  const handle = document.getElementById('compareHandle');
+  const divider = document.getElementById('compareDivider');
+
+  function updatePos(clientX) {
+    const panel = document.getElementById('canvas3d').parentElement;
+    const rect  = panel.getBoundingClientRect();
+    compareSlider = Math.max(0.05, Math.min(0.95, (clientX - rect.left) / rect.width));
+    divider.style.left = (compareSlider * 100) + '%';
+  }
+
+  handle.addEventListener('mousedown', e => {
+    isDragging = true; e.preventDefault(); e.stopPropagation();
+  });
+  handle.addEventListener('touchstart', e => {
+    isDragging = true; e.preventDefault();
+  }, { passive:false });
+
+  window.addEventListener('mousemove', e => { if (isDragging) updatePos(e.clientX); });
+  window.addEventListener('touchmove', e => { if (isDragging) updatePos(e.touches[0].clientX); }, { passive:false });
+  window.addEventListener('mouseup',   () => { isDragging = false; });
+  window.addEventListener('touchend',  () => { isDragging = false; });
+}
+
+// ══════════════════════════════════════════
+// LIGHTING CONTROLS
+// ══════════════════════════════════════════
 const PRESETS = {
   outdoor: {
-    label: 'outdoor', sky: '#1a3060',
-    sun:  { color: 0xfff5e0, intensity: 1.8, angle: 45,  height: 60 },
-    amb:  { color: 0xc8d8ff, intensity: 0.6 },
-    hemi: { sky: 0x9ab8ff,   ground: 0x6a5430, intensity: 0.4 },
-    fill: { color: 0x8ab4ff, intensity: 0.35 },
-    rim:  { color: 0xffcc88, intensity: 0.30 },
-    exposure: 1.2,
+    sky:'#1a3060', sun:{color:0xfff5e0,intensity:1.8,angle:45,height:60},
+    amb:{color:0xc8d8ff,intensity:0.6}, hemi:{sky:0x9ab8ff,ground:0x6a5430,intensity:0.4},
+    fill:{color:0x8ab4ff,intensity:0.35}, rim:{color:0xffcc88,intensity:0.30}, exposure:1.2,
   },
   studio: {
-    label: 'studio', sky: '#0e0e12',
-    sun:  { color: 0xffffff, intensity: 2.4, angle: 30,  height: 70 },
-    amb:  { color: 0xffffff, intensity: 0.9 },
-    hemi: { sky: 0xffffff,   ground: 0x444444, intensity: 0.3 },
-    fill: { color: 0xddeeff, intensity: 0.65 },
-    rim:  { color: 0xffffff, intensity: 0.55 },
-    exposure: 1.0,
+    sky:'#0c0c10', sun:{color:0xffffff,intensity:2.5,angle:30,height:72},
+    amb:{color:0xffffff,intensity:0.9}, hemi:{sky:0xffffff,ground:0x444,intensity:0.25},
+    fill:{color:0xddeeff,intensity:0.65}, rim:{color:0xffffff,intensity:0.55}, exposure:1.0,
   },
   sunset: {
-    label: 'sunset', sky: '#3d1c06',
-    sun:  { color: 0xff8833, intensity: 1.6, angle: 10,  height: 7 },
-    amb:  { color: 0xff9966, intensity: 0.5 },
-    hemi: { sky: 0xff7733,   ground: 0x331100, intensity: 0.45 },
-    fill: { color: 0xaa5533, intensity: 0.28 },
-    rim:  { color: 0xff6600, intensity: 0.55 },
-    exposure: 1.1,
+    sky:'#3a1a06', sun:{color:0xff8833,intensity:1.6,angle:10,height:7},
+    amb:{color:0xff9966,intensity:0.5}, hemi:{sky:0xff7733,ground:0x330e00,intensity:0.45},
+    fill:{color:0xaa5533,intensity:0.28}, rim:{color:0xff6600,intensity:0.55}, exposure:1.1,
   },
   night: {
-    label: 'night', sky: '#04060e',
-    sun:  { color: 0x2244aa, intensity: 0.12, angle: 200, height: 12 },
-    amb:  { color: 0x102040, intensity: 0.18 },
-    hemi: { sky: 0x102040,   ground: 0x040608, intensity: 0.12 },
-    fill: { color: 0x2244aa, intensity: 0.12 },
-    rim:  { color: 0x4488ff, intensity: 0.22 },
-    exposure: 0.65,
+    sky:'#03050c', sun:{color:0x2244aa,intensity:0.12,angle:200,height:12},
+    amb:{color:0x102040,intensity:0.18}, hemi:{sky:0x102040,ground:0x040608,intensity:0.12},
+    fill:{color:0x2244aa,intensity:0.12}, rim:{color:0x4488ff,intensity:0.22}, exposure:0.65,
   },
 };
 
 function applyEnvPreset(name) {
   const p = PRESETS[name]; if (!p) return;
 
-  // Mark active button
   document.querySelectorAll('.env-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.preset === name);
   });
 
-  // Apply scene
-  scene.background = new THREE.Color(p.sky);
-  sunLight.color.setHex(p.sun.color);    sunLight.intensity = p.sun.intensity;
+  currentSkyHex = p.sky;
+  if (currentMode !== 'mesh') applySky(p.sky);
+
+  sunLight.color.setHex(p.sun.color);    sunLight.intensity    = p.sun.intensity;
   ambientLight.color.setHex(p.amb.color); ambientLight.intensity = p.amb.intensity;
   hemiLight.color.setHex(p.hemi.sky);
   hemiLight.groundColor.setHex(p.hemi.ground);
   hemiLight.intensity = p.hemi.intensity;
-  fillLight.color.setHex(p.fill.color);  fillLight.intensity = p.fill.intensity;
-  rimLight.color.setHex(p.rim.color);    rimLight.intensity  = p.rim.intensity;
+  fillLight.color.setHex(p.fill.color);  fillLight.intensity   = p.fill.intensity;
+  rimLight.color.setHex(p.rim.color);    rimLight.intensity    = p.rim.intensity;
   renderer.toneMappingExposure = p.exposure;
+
+  // Sync compare lights
+  if (cLights.sun) {
+    cLights.sun.color.setHex(p.sun.color); cLights.sun.intensity = p.sun.intensity;
+    cLights.ambient.color.setHex(p.amb.color); cLights.ambient.intensity = p.amb.intensity;
+    cLights.hemi.color.setHex(p.hemi.sky); cLights.hemi.groundColor.setHex(p.hemi.ground); cLights.hemi.intensity = p.hemi.intensity;
+    cLights.fill.color.setHex(p.fill.color); cLights.fill.intensity = p.fill.intensity;
+    cLights.rim.color.setHex(p.rim.color); cLights.rim.intensity = p.rim.intensity;
+  }
+
   setSunPosition(p.sun.angle, p.sun.height);
 
-  // Sync sliders
   document.getElementById('sunIntSlider').value = p.sun.intensity;
   document.getElementById('sunIntVal').textContent = p.sun.intensity.toFixed(1);
   document.getElementById('ambIntSlider').value = p.amb.intensity;
@@ -1030,74 +2472,90 @@ function applyEnvPreset(name) {
   document.getElementById('skyColorLabel').textContent = p.sky;
 }
 
-// ── Collapse/expand lighting panel ────────────────────
+function onSunIntensity(v) {
+  const val = parseFloat(v);
+  sunLight.intensity = val;
+  if (cLights.sun) cLights.sun.intensity = val;
+  document.getElementById('sunIntVal').textContent = val.toFixed(1);
+}
+function onAmbientIntensity(v) {
+  const val = parseFloat(v);
+  ambientLight.intensity = val;
+  hemiLight.intensity = val*0.65;
+  if (cLights.ambient) cLights.ambient.intensity = val;
+  if (cLights.hemi)    cLights.hemi.intensity    = val*0.65;
+  document.getElementById('ambIntVal').textContent = val.toFixed(2);
+}
+function onSunAngle(v) {
+  document.getElementById('sunAngVal').textContent = v + '°';
+  setSunPosition(parseInt(v), parseInt(document.getElementById('sunHtSlider').value));
+}
+function onSunHeight(v) {
+  document.getElementById('sunHtVal').textContent = v + '°';
+  setSunPosition(parseInt(document.getElementById('sunAngSlider').value), parseInt(v));
+}
+function onSkyColor(v) {
+  currentSkyHex = v;
+  if (currentMode !== 'mesh') applySky(v);
+  document.getElementById('skyColorLabel').textContent = v;
+  const skyC = new THREE.Color(v);
+  const blended = skyC.clone().lerp(new THREE.Color(0xffffff), 0.45);
+  ambientLight.color.copy(blended);
+  if (cLights.ambient) cLights.ambient.color.copy(blended);
+}
 function toggleLightingPanel() {
   lpCollapsed = !lpCollapsed;
   document.getElementById('lpBody').classList.toggle('collapsed', lpCollapsed);
-  document.getElementById('lpCollapseBtn').textContent = lpCollapsed ? '▼' : '▲';
+  document.getElementById('lpBtn').textContent = lpCollapsed ? '▼' : '▲';
 }
 
-// ── Model loading ─────────────────────────────────────
-function loadModel(url) {
-  if (model) { scene.remove(model); model = null; animMixer = null; }
-  new GLTFLoader().load(url, gltf => {
-    model = gltf.scene;
-    // Enable shadows on every mesh
-    model.traverse(obj => {
-      if (obj.isMesh) { obj.castShadow = true; obj.receiveShadow = true; }
-    });
-    // Auto-scale & center
-    const box  = new THREE.Box3().setFromObject(model);
-    const size = box.getSize(new THREE.Vector3());
-    const ctr  = box.getCenter(new THREE.Vector3());
-    const sc   = 3.0 / Math.max(size.x, size.y, size.z);
-    model.scale.setScalar(sc);
-    model.position.set(-ctr.x*sc, -ctr.y*sc, -ctr.z*sc);
-    scene.add(model);
-
-    // Fit shadow frustum
-    const hs = (Math.max(size.x, size.y, size.z) * sc) / 2 + 2;
-    Object.assign(sunLight.shadow.camera, { left:-hs*4, right:hs*4, top:hs*4, bottom:-hs*4 });
-    sunLight.shadow.camera.updateProjectionMatrix();
-
-    camera.position.set(0, 0.5, 4);
-    controls.target.set(0, 0, 0);
-    controls.update();
-
-    if (gltf.animations?.length) {
-      animMixer = new THREE.AnimationMixer(model);
-      animMixer.clipAction(gltf.animations[0]).play();
-    }
-    document.getElementById('viewerLabel').textContent =
-      `Optimized model • ${gltf.animations?.length || 0} animation(s)`;
-  }, undefined, err => console.error('GLB load error:', err));
-}
-
+// ══════════════════════════════════════════
+// CAMERA & WIREFRAME & TOOLS
+// ══════════════════════════════════════════
 function resetCamera() {
-  camera.position.set(0, 0.5, 4); controls.target.set(0, 0, 0); controls.update();
+  camera.position.set(0, 0.5, 4);
+  controls.target.set(0, 0, 0);
+  controls.update();
 }
 
 function toggleWireframe() {
+  if (currentMode !== 'preview') return;   // Wireframe is a Preview tool
   wireframeOn = !wireframeOn;
   if (!model) return;
-  model.traverse(obj => {
-    if (obj.isMesh && obj.material) {
-      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-      mats.forEach(m => {
-        m.wireframe = wireframeOn;
-        if (wireframeOn) { m._origColor = m.color?.clone(); if (m.color) m.color.set(0x7cb8ff); }
-        else { if (m._origColor && m.color) m.color.copy(m._origColor); }
-      });
-    }
-  });
-  document.querySelectorAll('.viewer-btn')[1].classList.toggle('active', wireframeOn);
+  if (wireframeOn) applyWireframe(model, 0x7cb8ff);
+  else restoreMats(model);
+  document.getElementById('wireframeBtn').classList.toggle('active', wireframeOn);
 }
 
 function toggleAutoRotate() {
   autoRotate = !autoRotate;
-  document.querySelectorAll('.viewer-btn')[2].classList.toggle('active', autoRotate);
+  document.getElementById('rotateBtn').classList.toggle('active', autoRotate);
 }
 
+function toggleGroundGrid() {
+  showGrid = !showGrid;
+  if (gridObj)     gridObj.visible     = showGrid;
+  if (gridObjC)    gridObjC.visible    = showGrid;
+  if (shadowPlane) shadowPlane.visible = showGrid;
+  document.getElementById('gridBtn').classList.toggle('active', showGrid);
+}
+
+function takeScreenshot() {
+  // Ensure latest frame
+  if (currentMode === 'preview') {
+    renderer.render(scene, camera);
+  } else {
+    renderSplit();
+  }
+  const link = document.createElement('a');
+  link.download = 'glb-preview.png';
+  link.href = renderer.domElement.toDataURL('image/png');
+  link.click();
+}
+
+// ══════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════
 initViewer();
 </script>
 </body>
